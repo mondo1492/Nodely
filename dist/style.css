@@ -1,0 +1,9 @@
+#game {
+  display: flex;
+  justify-content: center;
+
+}
+#canvas {
+  border: #666 1px solid;
+  background-color: lightgreen;
+}

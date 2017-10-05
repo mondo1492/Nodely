@@ -65,25 +65,69 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, exports, __webpack_require__) {
+
+const Game = __webpack_require__(1);
+const GameView = __webpack_require__(2);
+
+document.addEventListener("DOMContentLoaded", function() {
+  const canvasEl = document.getElementById("canvas");
+  // canvasEl.width = 1000;
+  // canvasEl.height = 600;
+
+  const ctx = canvasEl.getContext("2d");
+  const game = new Game();
+  new GameView(game, ctx).start();
+});
+
+
+/***/ }),
+/* 1 */
 /***/ (function(module, exports) {
 
-// import _ from 'lodash';
-//
-// function component() {
-//   var element = document.createElement('div');
-//
-//   // Lodash, currently included via a script, is required for this line to work
-//   element.innerHTML = _.join(['Hellod', 'webpack'], ' ');
-//
-//   return element;
-// }
-//
-// document.body.appendChild(component());
-
-class Nodely {
+class Game {
   constructor() {
+
+  }
+  step(timeDelta) {
+
+  }
+  draw(ctx) {
+
   }
 }
+
+module.exports = Game;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+const Game = __webpack_require__(1);
+const Index = __webpack_require__(0);
+
+class GameView {
+  constructor(game, ctx) {
+    this.ctx = ctx;
+    this.game = game;
+  }
+
+  start() {
+    this.lastTime = 0;
+    requestAnimationFrame(this.animate.bind(this));
+  }
+
+  animate(time) {
+    const timeDelta = time - this.lastTime;
+    this.game.step(timeDelta);
+    this.game.draw(this.ctx);
+    this.lastTime = time;
+    requestAnimationFrame(this.animate.bind(this));
+  }
+}
+
+module.exports = GameView;
 
 
 /***/ })

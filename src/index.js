@@ -1,17 +1,12 @@
-// import _ from 'lodash';
-//
-// function component() {
-//   var element = document.createElement('div');
-//
-//   // Lodash, currently included via a script, is required for this line to work
-//   element.innerHTML = _.join(['Hellod', 'webpack'], ' ');
-//
-//   return element;
-// }
-//
-// document.body.appendChild(component());
+const Game = require("./game");
+const GameView = require("./game_view");
 
-class Nodely {
-  constructor() {
-  }
-}
+document.addEventListener("DOMContentLoaded", function() {
+  const canvasEl = document.getElementById("canvas");
+  // canvasEl.width = 1000;
+  // canvasEl.height = 600;
+
+  const ctx = canvasEl.getContext("2d");
+  const game = new Game();
+  new GameView(game, ctx).start();
+});
