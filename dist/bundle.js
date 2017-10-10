@@ -60,31 +60,11 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
-
-const Game = __webpack_require__(1);
-const GameView = __webpack_require__(2);
-const Util = __webpack_require__(4);
-
-document.addEventListener("DOMContentLoaded", function() {
-  const canvasEl = document.getElementById("canvas");
-  canvasEl.width = Game.DIM_X;
-  canvasEl.height = Game.DIM_Y;
-
-  const ctx = canvasEl.getContext("2d");
-  const game = new Game();
-  new GameView(game, ctx).start();
-  
-});
-
-
-/***/ }),
-/* 1 */
 /***/ (function(module, exports) {
 
 class Game {
@@ -107,45 +87,64 @@ module.exports = Game;
 
 
 /***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+const Game = __webpack_require__(0);
+const GameView = __webpack_require__(2);
+const Util = __webpack_require__(5);
+
+document.addEventListener("DOMContentLoaded", function() {
+  const canvasEl = document.getElementById("canvas");
+  canvasEl.width = Game.DIM_X;
+  canvasEl.height = Game.DIM_Y;
+
+  const ctx = canvasEl.getContext("2d");
+  const game = new Game();
+  new GameView(game, ctx).start();
+  
+});
+
+
+/***/ }),
 /* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const Game = __webpack_require__(1);
-const Index = __webpack_require__(0);
+const Game = __webpack_require__(0);
+const Index = __webpack_require__(1);
 const SourceNode = __webpack_require__(3);
-const SubNode = __webpack_require__(5);
+const SubNode = __webpack_require__(4);
 
 class GameView {
   constructor(game, ctx) {
-    let self = this;
     this.ctx = ctx;
     this.game = game;
     this.interval = 0;
     this.stored = [];
     this.subNodes = [];
-    document.getElementById("canvas").addEventListener('mousedown', function() {
+    this.canvas = document.getElementById("canvas");
+    this.registerEventListener = this.registerEventListener.bind(this);
+    this.registerEventListener();
+  }
+
+  registerEventListener() {
+    let self = this;
+    this.canvas.addEventListener('mousedown', function() {
         let xCord = event.offsetX;
         let yCord = event.offsetY;
         self.stored.forEach((sourcenode) => {
           if (xCord >= sourcenode.xRange[0] && xCord <= sourcenode.xRange[1] &&
             yCord >= sourcenode.yRange[0] && yCord <= sourcenode.yRange[1]) {
-              let test1 = document.getElementById("canvas").addEventListener('mousedown', self.stats(xCord, yCord));
-              let test2 = document.getElementById("canvas").addEventListener('mouseup', function() {
-                let xCord2 = event.offsetX;
-                let yCord2 = event.offsetY;
-                const subNode = new SubNode(xCord2, yCord2, self.ctx);
+              self.canvas.addEventListener('mouseup', function handler(e) {
+                e.currentTarget.removeEventListener(e.type, handler);
+                const xCordUp = event.offsetX;
+                const yCordUp = event.offsetY;
+                const subNode = new SubNode(xCordUp, yCordUp, self.ctx);
                 subNode.drawSubNode();
               });
-              document.getElementById("canvas").removeEventListener('mouseup');
             }
-
         });
-
-      });
-  }
-
-  stats(xCord, yCord) {
-    // alert("X position is : " + xCord + "  Y position is : " + yCord);
+    });
   }
 
   start() {
@@ -187,7 +186,7 @@ module.exports = GameView;
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const Game = __webpack_require__(1);
+const Game = __webpack_require__(0);
 
 class SourceNode {
   constructor(stored) {
@@ -270,20 +269,6 @@ module.exports = SourceNode;
 /* 4 */
 /***/ (function(module, exports) {
 
-class Util {
-  x() {
-    return 1000;
-  }
-  y() {
-    return 400;
-  }
-}
-
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports) {
-
 class SubNode {
   constructor(x, y, ctx) {
     this.sumVal = 0;
@@ -303,6 +288,20 @@ class SubNode {
 }
 
 module.exports = SubNode;
+
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+class Util {
+  x() {
+    return 1000;
+  }
+  y() {
+    return 400;
+  }
+}
 
 
 /***/ })
