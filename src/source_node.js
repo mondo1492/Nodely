@@ -11,7 +11,7 @@ class SourceNode {
     this.val = Math.floor(Math.random() * (5)) + 1;
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
-    this.timeAlive = 10;
+    this.timeAlive = 1000;
   }
 
   updateTimeAlive() {

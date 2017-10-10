@@ -114,14 +114,17 @@ const Game = __webpack_require__(0);
 const Index = __webpack_require__(1);
 const SourceNode = __webpack_require__(3);
 const SubNode = __webpack_require__(4);
+const DragLine = __webpack_require__(6);
 
 class GameView {
   constructor(game, ctx) {
     this.ctx = ctx;
     this.game = game;
     this.interval = 0;
+    this.interval2 = 0;
     this.stored = [];
     this.subNodes = [];
+    this.dragLine = null;
     this.canvas = document.getElementById("canvas");
     this.registerEventListener = this.registerEventListener.bind(this);
     this.registerEventListener();
@@ -132,16 +135,85 @@ class GameView {
     this.canvas.addEventListener('mousedown', function() {
         let xCord = event.offsetX;
         let yCord = event.offsetY;
+
         self.stored.forEach((sourcenode) => {
           if (xCord >= sourcenode.xRange[0] && xCord <= sourcenode.xRange[1] &&
             yCord >= sourcenode.yRange[0] && yCord <= sourcenode.yRange[1]) {
+              self.canvas.addEventListener('mousemove', function handler(e) {
+
+                const xCordMove = event.offsetX;
+                const yCordMove = event.offsetY;
+
+                const dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
+                self.dragLine = dragLine;
+                self.canvas.addEventListener('mouseup', function handler2(e2) {
+                  e2.currentTarget.removeEventListener(e2.type, handler2);
+                  e2.currentTarget.removeEventListener(e.type, handler);
+                  self.dragLine = null;
+                });
+              });
               self.canvas.addEventListener('mouseup', function handler(e) {
                 e.currentTarget.removeEventListener(e.type, handler);
                 const xCordUp = event.offsetX;
                 const yCordUp = event.offsetY;
-                const subNode = new SubNode(xCordUp, yCordUp, self.ctx);
-                subNode.drawSubNode();
+                const subNode = new SubNode(xCordUp, yCordUp, self.ctx, sourcenode.val);
+                self.subNodes.push(subNode);
               });
+            }
+        });
+        self.subNodes.forEach(function(subnode) {
+
+          if (xCord >= subnode.xRange[0] && xCord <= subnode.xRange[1] &&
+            yCord >= subnode.yRange[0] && yCord <= subnode.yRange[1]) {
+              let addVal = subnode.val;
+              self.canvas.addEventListener('mousemove', function handler(e) {
+
+                const xCordMove = event.offsetX;
+                const yCordMove = event.offsetY;
+
+                const dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
+                self.dragLine = dragLine;
+                self.canvas.addEventListener('mouseup', function handler2(e2) {
+                  e2.currentTarget.removeEventListener(e2.type, handler2);
+                  e2.currentTarget.removeEventListener(e.type, handler);
+                  self.dragLine = null;
+                });
+              });
+              self.canvas.addEventListener('mouseup', function handler(e) {
+                e.currentTarget.removeEventListener(e.type, handler);
+                const xCordUp = event.offsetX;
+                const yCordUp = event.offsetY;
+                let addUp = false;
+                let subNodeIdx = 0;
+                while (subNodeIdx < self.subNodes.length) {
+                  if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] && xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
+                    yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
+                      self.subNodes[subNodeIdx].val += addVal;
+                      addUp = true;
+                      break;
+                    }
+                    subNodeIdx += 1;
+                }
+                if (addUp === false) {
+                  const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
+                  self.subNodes.push(subNode2);
+                } else {
+                  addUp = false;
+                }
+
+                // self.subNodes.forEach(function(subnode2) {
+                //   if (xCordUp >= subnode2.xRange[0] && xCordUp <= subnode2.xRange[1] &&
+                //     yCordUp >= subnode2.yRange[0] && yCordUp <= subnode2.yRange[1]) {
+                //       subnode2.val += addVal;
+                //     } else {
+                //       const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
+                //       self.subNodes.push(subNode2);
+                //     }
+                // });
+              });
+
+
+
             }
         });
     });
@@ -156,24 +228,39 @@ class GameView {
     let self = this;
     let newStore = [];
     const timeDelta = time - this.lastTime;
+    this.ctx.clearRect(0, 0, Game.DIM_X, Game.DIM_Y);
+
+    this.stored.forEach(function(sourcenode) {
+      sourcenode.updateTimeAlive();
+      if (sourcenode.timeAlive !== 0) {
+        newStore.push(sourcenode);
+      }
+      self.stored = newStore;
+      sourcenode.drawSourceNode(self.ctx);
+    });
+
+
+
     if (this.interval === 250) {
-      this.ctx.clearRect(0, 0, Game.DIM_X, Game.DIM_Y);
       this.stored.push(new SourceNode(this.stored));
-      this.stored.forEach(function(sourcenode) {
-        sourcenode.updateTimeAlive();
-        if (sourcenode.timeAlive !== 0) {
-          newStore.push(sourcenode);
-        }
-        self.stored = newStore;
-        sourcenode.drawSourceNode(self.ctx);
-      });
+
+
       this.game.step(timeDelta);
       this.game.draw(this.ctx);
       this.lastTime = time;
       this.interval = 0;
     } else {
       this.interval += 1;
+      this.interval2 += 1;
     }
+
+    if (this.dragLine !== null) {
+      this.dragLine.draw(self.ctx);
+    }
+
+    this.subNodes.forEach(function(subnode) {
+      subnode.drawSubNode(self.ctx);
+    });
 
     requestAnimationFrame(this.animate.bind(this));
   }
@@ -199,7 +286,7 @@ class SourceNode {
     this.val = Math.floor(Math.random() * (5)) + 1;
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
-    this.timeAlive = 10;
+    this.timeAlive = 1000;
   }
 
   updateTimeAlive() {
@@ -270,19 +357,27 @@ module.exports = SourceNode;
 /***/ (function(module, exports) {
 
 class SubNode {
-  constructor(x, y, ctx) {
+  constructor(x, y, ctx, initialVal) {
     this.sumVal = 0;
     this.ctx = ctx;
     this.x = x;
     this.y = y;
+    this.xRange = [this.x - 40, this.x + 40];
+    this.yRange = [this.y - 40, this.y + 40];
+    this.val = initialVal;
   }
   drawSubNode() {
     this.ctx.beginPath();
-    this.ctx.arc(this.x, this.y, 70, 0, 2 * Math.PI, false);
+    this.ctx.arc(this.x, this.y, 15, 0, 2 * Math.PI, false);
     this.ctx.fillStyle = 'green';
     this.ctx.fill();
     this.ctx.lineWidth = 5;
     this.ctx.strokeStyle = '#003300';
+
+    this.ctx.font = "20px Georgia";
+    this.ctx.fillStyle = "#000000";
+    this.ctx.fillText(this.val, this.x - 5, this.y + 30);
+    this.ctx.fillStyle = this.color;
     this.ctx.stroke();
   }
 }
@@ -302,6 +397,30 @@ class Util {
     return 400;
   }
 }
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
+class DragLine {
+  constructor(x, y, x2, y2) {
+    this.x = x;
+    this.y = y;
+    this.x2 = x2;
+    this.y2 = y2;
+    this.pos = [];
+  }
+  draw(ctx) {
+    ctx.beginPath();
+    ctx.strokStyle = "black";
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x2, this.y2);
+    ctx.stroke();
+  }
+}
+
+module.exports = DragLine;
 
 
 /***/ })
