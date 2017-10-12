@@ -8,6 +8,7 @@ class SourceNode {
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
     this.lines = [];
+    this.currentLine = 0;
     this.val = Math.floor(Math.random() * (5)) + 1;
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
@@ -21,6 +22,7 @@ class SourceNode {
   addLines(line) {
     this.lines.push(line);
   }
+
 
   assureNonOverlapPosition(stored) {
     for (let i = 0; i < stored.length; i++) {

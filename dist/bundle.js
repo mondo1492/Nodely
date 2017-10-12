@@ -107,7 +107,7 @@ module.exports = Game;
 
 const Game = __webpack_require__(0);
 const GameView = __webpack_require__(2);
-const Util = __webpack_require__(6);
+const Util = __webpack_require__(7);
 
 document.addEventListener("DOMContentLoaded", function() {
   const canvasEl = document.getElementById("canvas");
@@ -130,6 +130,7 @@ const Index = __webpack_require__(1);
 const SourceNode = __webpack_require__(3);
 const SubNode = __webpack_require__(4);
 const DragLine = __webpack_require__(5);
+const PowerBall = __webpack_require__(6);
 
 class GameView {
   constructor(game, ctx) {
@@ -140,6 +141,7 @@ class GameView {
     this.stored = [];
     this.subNodes = [];
     this.lines = [];
+    this.balls = [];
     this.dragLine = null;
     this.canvas = document.getElementById("canvas");
     this.registerEventListener = this.registerEventListener.bind(this);
@@ -189,6 +191,8 @@ class GameView {
           let subNodeIdx = 0;
           if (node instanceof SourceNode) {
             node.addLines(self.dragLine);
+            const powerBall = new PowerBall(self.dragLine, node);
+            self.balls.push(powerBall);
           }
 
           while (subNodeIdx < self.subNodes.length) {
@@ -271,8 +275,12 @@ class GameView {
       line.draw(self.ctx);
     });
 
-    console.log(this.stored);
-    console.log(this.subNodes);
+    this.balls.forEach(function(ball) {
+      ball.updatePosition();
+      ball.draw(self.ctx);
+    });
+
+    console.log("BALLS", this.balls);
     requestAnimationFrame(this.animate.bind(this));
   }
 }
@@ -294,6 +302,7 @@ class SourceNode {
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
     this.lines = [];
+    this.currentLine = 0;
     this.val = Math.floor(Math.random() * (5)) + 1;
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
@@ -307,6 +316,7 @@ class SourceNode {
   addLines(line) {
     this.lines.push(line);
   }
+
 
   assureNonOverlapPosition(stored) {
     for (let i = 0; i < stored.length; i++) {
@@ -428,6 +438,45 @@ module.exports = DragLine;
 
 /***/ }),
 /* 6 */
+/***/ (function(module, exports) {
+
+class PowerBall {
+  constructor(line, node) {
+    this.x = line.x;
+    this.y = line.y;
+    this.x2 = line.x2;
+    this.y2 = line.y2;
+    this.percent = 1 / 1000;
+    this.associatedNode = node;
+  }
+
+  draw(ctx) {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 5, 0, 2 * Math.PI, false);
+    ctx.fillStyle = 'yellow';
+    ctx.fill();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#003300';
+
+    ctx.stroke();
+  }
+
+  collideWith() {
+
+  }
+
+  updatePosition() {
+    this.x += (this.x2 - this.x) * this.percent;
+    this.y += (this.y2 - this.y) * this.percent;
+    this.percent += .00001;
+  }
+}
+
+module.exports = PowerBall;
+
+
+/***/ }),
+/* 7 */
 /***/ (function(module, exports) {
 
 class Util {

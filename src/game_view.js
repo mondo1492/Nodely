@@ -3,6 +3,7 @@ const Index = require("./index");
 const SourceNode = require("./source_node");
 const SubNode = require("./sub_node");
 const DragLine = require("./drag_line");
+const PowerBall = require("./power_ball");
 
 class GameView {
   constructor(game, ctx) {
@@ -13,6 +14,7 @@ class GameView {
     this.stored = [];
     this.subNodes = [];
     this.lines = [];
+    this.balls = [];
     this.dragLine = null;
     this.canvas = document.getElementById("canvas");
     this.registerEventListener = this.registerEventListener.bind(this);
@@ -62,6 +64,8 @@ class GameView {
           let subNodeIdx = 0;
           if (node instanceof SourceNode) {
             node.addLines(self.dragLine);
+            const powerBall = new PowerBall(self.dragLine, node);
+            self.balls.push(powerBall);
           }
 
           while (subNodeIdx < self.subNodes.length) {
@@ -144,8 +148,12 @@ class GameView {
       line.draw(self.ctx);
     });
 
-    console.log(this.stored);
-    console.log(this.subNodes);
+    this.balls.forEach(function(ball) {
+      ball.updatePosition();
+      ball.draw(self.ctx);
+    });
+
+    console.log("BALLS", this.balls);
     requestAnimationFrame(this.animate.bind(this));
   }
 }
