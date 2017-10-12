@@ -27,6 +27,7 @@ class GameView {
         self.stored.forEach((sourcenode) => {
           if (xCord >= sourcenode.xRange[0] && xCord <= sourcenode.xRange[1] &&
             yCord >= sourcenode.yRange[0] && yCord <= sourcenode.yRange[1]) {
+              let addVal = sourcenode.val;
               self.canvas.addEventListener('mousemove', function handler(e) {
 
                 const xCordMove = event.offsetX;
@@ -37,6 +38,7 @@ class GameView {
                 self.canvas.addEventListener('mouseup', function handler2(e2) {
                   e2.currentTarget.removeEventListener(e2.type, handler2);
                   e2.currentTarget.removeEventListener(e.type, handler);
+
                   self.dragLine = null;
                 });
               });
@@ -44,8 +46,27 @@ class GameView {
                 e.currentTarget.removeEventListener(e.type, handler);
                 const xCordUp = event.offsetX;
                 const yCordUp = event.offsetY;
-                const subNode = new SubNode(xCordUp, yCordUp, self.ctx, sourcenode.val);
-                self.subNodes.push(subNode);
+                let addUp = false;
+                let subNodeIdx = 0;
+                sourcenode.addLines(self.dragLine);
+                while (subNodeIdx < self.subNodes.length) {
+                  if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] && xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
+                    yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
+                      self.subNodes[subNodeIdx].val += addVal;
+                      self.lines.push(self.dragLine);
+                      sourcenode.addLines(self.dragLine);
+                      addUp = true;
+                      break;
+                    }
+                    subNodeIdx += 1;
+                }
+                if (addUp === false) {
+                  const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
+                  self.subNodes.push(subNode2);
+                  sourcenode.addLines(self.dragLine);
+                } else {
+                  addUp = false;
+                }
               });
             }
         });
@@ -78,6 +99,7 @@ class GameView {
                     yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
                       self.subNodes[subNodeIdx].val += addVal;
                       addUp = true;
+                      self.lines.push(self.dragLine);
                       break;
                     }
                     subNodeIdx += 1;
@@ -85,23 +107,11 @@ class GameView {
                 if (addUp === false) {
                   const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
                   self.subNodes.push(subNode2);
+                  self.lines.push(self.dragLine);
                 } else {
                   addUp = false;
                 }
-
-                // self.subNodes.forEach(function(subnode2) {
-                //   if (xCordUp >= subnode2.xRange[0] && xCordUp <= subnode2.xRange[1] &&
-                //     yCordUp >= subnode2.yRange[0] && yCordUp <= subnode2.yRange[1]) {
-                //       subnode2.val += addVal;
-                //     } else {
-                //       const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
-                //       self.subNodes.push(subNode2);
-                //     }
-                // });
               });
-
-
-
             }
         });
     });
@@ -125,6 +135,10 @@ class GameView {
       }
       self.stored = newStore;
       sourcenode.drawSourceNode(self.ctx);
+      console.log("LINES", sourcenode.lines);
+      sourcenode.lines.forEach(function(line) {
+        line.draw(self.ctx);
+      });
     });
 
 
@@ -150,6 +164,9 @@ class GameView {
       subnode.drawSubNode(self.ctx);
     });
 
+
+    console.log(this.stored);
+    console.log(this.subNodes);
     requestAnimationFrame(this.animate.bind(this));
   }
 }

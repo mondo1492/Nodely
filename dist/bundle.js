@@ -92,7 +92,7 @@ module.exports = Game;
 
 const Game = __webpack_require__(0);
 const GameView = __webpack_require__(2);
-const Util = __webpack_require__(5);
+const Util = __webpack_require__(6);
 
 document.addEventListener("DOMContentLoaded", function() {
   const canvasEl = document.getElementById("canvas");
@@ -114,7 +114,7 @@ const Game = __webpack_require__(0);
 const Index = __webpack_require__(1);
 const SourceNode = __webpack_require__(3);
 const SubNode = __webpack_require__(4);
-const DragLine = __webpack_require__(6);
+const DragLine = __webpack_require__(5);
 
 class GameView {
   constructor(game, ctx) {
@@ -139,6 +139,7 @@ class GameView {
         self.stored.forEach((sourcenode) => {
           if (xCord >= sourcenode.xRange[0] && xCord <= sourcenode.xRange[1] &&
             yCord >= sourcenode.yRange[0] && yCord <= sourcenode.yRange[1]) {
+              let addVal = sourcenode.val;
               self.canvas.addEventListener('mousemove', function handler(e) {
 
                 const xCordMove = event.offsetX;
@@ -149,6 +150,7 @@ class GameView {
                 self.canvas.addEventListener('mouseup', function handler2(e2) {
                   e2.currentTarget.removeEventListener(e2.type, handler2);
                   e2.currentTarget.removeEventListener(e.type, handler);
+
                   self.dragLine = null;
                 });
               });
@@ -156,8 +158,27 @@ class GameView {
                 e.currentTarget.removeEventListener(e.type, handler);
                 const xCordUp = event.offsetX;
                 const yCordUp = event.offsetY;
-                const subNode = new SubNode(xCordUp, yCordUp, self.ctx, sourcenode.val);
-                self.subNodes.push(subNode);
+                let addUp = false;
+                let subNodeIdx = 0;
+                sourcenode.addLines(self.dragLine);
+                while (subNodeIdx < self.subNodes.length) {
+                  if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] && xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
+                    yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
+                      self.subNodes[subNodeIdx].val += addVal;
+                      self.lines.push(self.dragLine);
+                      sourcenode.addLines(self.dragLine);
+                      addUp = true;
+                      break;
+                    }
+                    subNodeIdx += 1;
+                }
+                if (addUp === false) {
+                  const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
+                  self.subNodes.push(subNode2);
+                  sourcenode.addLines(self.dragLine);
+                } else {
+                  addUp = false;
+                }
               });
             }
         });
@@ -190,6 +211,7 @@ class GameView {
                     yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
                       self.subNodes[subNodeIdx].val += addVal;
                       addUp = true;
+                      self.lines.push(self.dragLine);
                       break;
                     }
                     subNodeIdx += 1;
@@ -197,23 +219,11 @@ class GameView {
                 if (addUp === false) {
                   const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
                   self.subNodes.push(subNode2);
+                  self.lines.push(self.dragLine);
                 } else {
                   addUp = false;
                 }
-
-                // self.subNodes.forEach(function(subnode2) {
-                //   if (xCordUp >= subnode2.xRange[0] && xCordUp <= subnode2.xRange[1] &&
-                //     yCordUp >= subnode2.yRange[0] && yCordUp <= subnode2.yRange[1]) {
-                //       subnode2.val += addVal;
-                //     } else {
-                //       const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
-                //       self.subNodes.push(subNode2);
-                //     }
-                // });
               });
-
-
-
             }
         });
     });
@@ -237,6 +247,10 @@ class GameView {
       }
       self.stored = newStore;
       sourcenode.drawSourceNode(self.ctx);
+      console.log("LINES", sourcenode.lines);
+      sourcenode.lines.forEach(function(line) {
+        line.draw(self.ctx);
+      });
     });
 
 
@@ -262,6 +276,9 @@ class GameView {
       subnode.drawSubNode(self.ctx);
     });
 
+
+    console.log(this.stored);
+    console.log(this.subNodes);
     requestAnimationFrame(this.animate.bind(this));
   }
 }
@@ -282,7 +299,7 @@ class SourceNode {
     this.assureNonOverlapPosition(stored);
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
-
+    this.lines = [];
     this.val = Math.floor(Math.random() * (5)) + 1;
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
@@ -291,6 +308,10 @@ class SourceNode {
 
   updateTimeAlive() {
     this.timeAlive -= 1;
+  }
+
+  addLines(line) {
+    this.lines.push(line);
   }
 
   assureNonOverlapPosition(stored) {
@@ -389,20 +410,6 @@ module.exports = SubNode;
 /* 5 */
 /***/ (function(module, exports) {
 
-class Util {
-  x() {
-    return 1000;
-  }
-  y() {
-    return 400;
-  }
-}
-
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports) {
-
 class DragLine {
   constructor(x, y, x2, y2) {
     this.x = x;
@@ -421,6 +428,20 @@ class DragLine {
 }
 
 module.exports = DragLine;
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
+class Util {
+  x() {
+    return 1000;
+  }
+  y() {
+    return 400;
+  }
+}
 
 
 /***/ })
