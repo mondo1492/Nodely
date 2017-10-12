@@ -1,9 +1,11 @@
+const Game = require("./game");
+
 class SubNode {
   constructor(x, y, ctx, initialVal) {
-    this.sumVal = 0;
     this.ctx = ctx;
     this.x = x;
     this.y = y;
+    this.lines = [];
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
     this.val = initialVal;
@@ -11,7 +13,7 @@ class SubNode {
   drawSubNode() {
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, 15, 0, 2 * Math.PI, false);
-    this.ctx.fillStyle = 'green';
+    this.ctx.fillStyle = Game.COLORS[this.val];
     this.ctx.fill();
     this.ctx.lineWidth = 5;
     this.ctx.strokeStyle = '#003300';

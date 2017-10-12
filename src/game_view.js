@@ -12,6 +12,7 @@ class GameView {
     this.interval2 = 0;
     this.stored = [];
     this.subNodes = [];
+    this.lines = [];
     this.dragLine = null;
     this.canvas = document.getElementById("canvas");
     this.registerEventListener = this.registerEventListener.bind(this);
@@ -24,97 +25,72 @@ class GameView {
         let xCord = event.offsetX;
         let yCord = event.offsetY;
 
-        self.stored.forEach((sourcenode) => {
-          if (xCord >= sourcenode.xRange[0] && xCord <= sourcenode.xRange[1] &&
-            yCord >= sourcenode.yRange[0] && yCord <= sourcenode.yRange[1]) {
-              let addVal = sourcenode.val;
-              self.canvas.addEventListener('mousemove', function handler(e) {
-
-                const xCordMove = event.offsetX;
-                const yCordMove = event.offsetY;
-
-                const dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
-                self.dragLine = dragLine;
-                self.canvas.addEventListener('mouseup', function handler2(e2) {
-                  e2.currentTarget.removeEventListener(e2.type, handler2);
-                  e2.currentTarget.removeEventListener(e.type, handler);
-
-                  self.dragLine = null;
-                });
-              });
-              self.canvas.addEventListener('mouseup', function handler(e) {
-                e.currentTarget.removeEventListener(e.type, handler);
-                const xCordUp = event.offsetX;
-                const yCordUp = event.offsetY;
-                let addUp = false;
-                let subNodeIdx = 0;
-                sourcenode.addLines(self.dragLine);
-                while (subNodeIdx < self.subNodes.length) {
-                  if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] && xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
-                    yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
-                      self.subNodes[subNodeIdx].val += addVal;
-                      self.lines.push(self.dragLine);
-                      sourcenode.addLines(self.dragLine);
-                      addUp = true;
-                      break;
-                    }
-                    subNodeIdx += 1;
-                }
-                if (addUp === false) {
-                  const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
-                  self.subNodes.push(subNode2);
-                  sourcenode.addLines(self.dragLine);
-                } else {
-                  addUp = false;
-                }
-              });
-            }
+        self.stored.forEach(function(sourcenode) {
+          self.test2(xCord, yCord, sourcenode);
         });
+
         self.subNodes.forEach(function(subnode) {
-
-          if (xCord >= subnode.xRange[0] && xCord <= subnode.xRange[1] &&
-            yCord >= subnode.yRange[0] && yCord <= subnode.yRange[1]) {
-              let addVal = subnode.val;
-              self.canvas.addEventListener('mousemove', function handler(e) {
-
-                const xCordMove = event.offsetX;
-                const yCordMove = event.offsetY;
-
-                const dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
-                self.dragLine = dragLine;
-                self.canvas.addEventListener('mouseup', function handler2(e2) {
-                  e2.currentTarget.removeEventListener(e2.type, handler2);
-                  e2.currentTarget.removeEventListener(e.type, handler);
-                  self.dragLine = null;
-                });
-              });
-              self.canvas.addEventListener('mouseup', function handler(e) {
-                e.currentTarget.removeEventListener(e.type, handler);
-                const xCordUp = event.offsetX;
-                const yCordUp = event.offsetY;
-                let addUp = false;
-                let subNodeIdx = 0;
-                while (subNodeIdx < self.subNodes.length) {
-                  if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] && xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
-                    yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
-                      self.subNodes[subNodeIdx].val += addVal;
-                      addUp = true;
-                      self.lines.push(self.dragLine);
-                      break;
-                    }
-                    subNodeIdx += 1;
-                }
-                if (addUp === false) {
-                  const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
-                  self.subNodes.push(subNode2);
-                  self.lines.push(self.dragLine);
-                } else {
-                  addUp = false;
-                }
-              });
-            }
+          self.test2(xCord, yCord, subnode);
         });
     });
+  }
+
+  test2(xCord, yCord, node) {
+    let self = this;
+    if (xCord >= node.xRange[0] && xCord <= node.xRange[1] &&
+      yCord >= node.yRange[0] && yCord <= node.yRange[1]) {
+        let addVal = node.val;
+        self.canvas.addEventListener('mousemove', function handler(e) {
+
+          const xCordMove = event.offsetX;
+          const yCordMove = event.offsetY;
+
+          const dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
+          self.dragLine = dragLine;
+          self.canvas.addEventListener('mouseup', function handler2(e2) {
+            e2.currentTarget.removeEventListener(e2.type, handler2);
+            e2.currentTarget.removeEventListener(e.type, handler);
+
+            self.dragLine = null;
+          });
+        });
+        self.canvas.addEventListener('mouseup', function handler(e) {
+          e.currentTarget.removeEventListener(e.type, handler);
+          const xCordUp = event.offsetX;
+          const yCordUp = event.offsetY;
+          let addUp = false;
+          let subNodeIdx = 0;
+          if (node instanceof SourceNode) {
+            node.addLines(self.dragLine);
+          }
+
+          while (subNodeIdx < self.subNodes.length) {
+            if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] && xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
+              yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
+                self.subNodes[subNodeIdx].val += addVal;
+                self.lines.push(self.dragLine);
+                if (node instanceof SourceNode) {
+                  node.addLines(self.dragLine);
+                }
+                addUp = true;
+                break;
+              }
+              subNodeIdx += 1;
+          }
+          if (addUp === false) {
+            const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
+            self.subNodes.push(subNode2);
+            if (node instanceof SourceNode) {
+              node.addLines(self.dragLine);
+            } else {
+              self.lines.push(self.dragLine);
+            }
+
+          } else {
+            addUp = false;
+          }
+        });
+      }
   }
 
   start() {
@@ -164,6 +140,9 @@ class GameView {
       subnode.drawSubNode(self.ctx);
     });
 
+    this.lines.forEach(function(line) {
+      line.draw(self.ctx);
+    });
 
     console.log(this.stored);
     console.log(this.subNodes);
