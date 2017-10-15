@@ -23,6 +23,20 @@
   position: absolute;
 }
 #StartButton {
+  margin-top: 350px;
+  margin-left: 400px;
+  font-size: 100px;
+  color: pink;
+  background: none;
+  border: none;
+  outline: none;
+  position: relative;
+}
+
+#StartButton:hover {
+  opacity: 0.5;
+}
+#TutorialButton {
   margin-top: 400px;
   position: relative;
 }
