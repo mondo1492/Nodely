@@ -15,6 +15,7 @@ class GameView {
     this.subNodes = [];
     this.lines = [];
     this.balls = [];
+    this.paused = false;
     this.dragLine = null;
     this.canvas = document.getElementById("canvas");
     this.registerEventListener = this.registerEventListener.bind(this);
@@ -34,6 +35,21 @@ class GameView {
         self.subNodes.forEach(function(subnode) {
           self.test2(xCord, yCord, subnode);
         });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      const key = e.target;
+      console.log("KEEEEEEEYYYYY", e.keyCode);
+      if (e.keyCode === 80 && self.paused === false) {
+
+        self.paused = true;
+
+        // self.ctx.clearRect(0, 0, Game.DIM_X, Game.DIM_Y);
+
+      } else {
+        self.paused = false;
+        requestAnimationFrame(self.animate.bind(self));
+      }
     });
   }
 
@@ -103,58 +119,65 @@ class GameView {
   }
 
   animate(time) {
-    let self = this;
-    let newStore = [];
-    const timeDelta = time - this.lastTime;
-    this.ctx.clearRect(0, 0, Game.DIM_X, Game.DIM_Y);
+    if (this.paused === false) {
+      let self = this;
+      let newStore = [];
+      const timeDelta = time - this.lastTime;
+      this.ctx.clearRect(0, 0, Game.DIM_X, Game.DIM_Y);
 
-    this.stored.forEach(function(sourcenode) {
-      sourcenode.updateTimeAlive();
-      if (sourcenode.timeAlive !== 0) {
-        newStore.push(sourcenode);
+      this.stored.forEach(function(sourcenode) {
+        sourcenode.updateTimeAlive();
+        if (sourcenode.timeAlive !== 0) {
+          newStore.push(sourcenode);
+        }
+        self.stored = newStore;
+        sourcenode.drawSourceNode(self.ctx);
+        console.log("LINES", sourcenode.lines);
+        sourcenode.lines.forEach(function(line) {
+          line.draw(self.ctx);
+        });
+      });
+
+
+
+      if (this.interval === 250) {
+        this.stored.push(new SourceNode(this.stored));
+
+
+        this.game.step(timeDelta);
+        this.game.draw(this.ctx);
+        this.lastTime = time;
+        this.interval = 0;
+      } else {
+        this.interval += 1;
+        this.interval2 += 1;
       }
-      self.stored = newStore;
-      sourcenode.drawSourceNode(self.ctx);
-      console.log("LINES", sourcenode.lines);
-      sourcenode.lines.forEach(function(line) {
+
+      if (this.dragLine !== null) {
+        this.dragLine.draw(self.ctx);
+      }
+
+      this.subNodes.forEach(function(subnode) {
+        subnode.drawSubNode(self.ctx);
+      });
+
+      this.lines.forEach(function(line) {
         line.draw(self.ctx);
       });
-    });
 
+      this.balls.forEach(function(ball) {
+        ball.updatePosition();
+        ball.draw(self.ctx);
+      });
 
-
-    if (this.interval === 250) {
-      this.stored.push(new SourceNode(this.stored));
-
-
-      this.game.step(timeDelta);
-      this.game.draw(this.ctx);
-      this.lastTime = time;
-      this.interval = 0;
+      console.log("BALLS", this.balls);
+      requestAnimationFrame(this.animate.bind(this));
     } else {
-      this.interval += 1;
-      this.interval2 += 1;
+      // this.ctx.globalAlpha = .1;
+      this.game.drawPausedScreen(this.ctx);
+      console.log("PAUSeD");
     }
 
-    if (this.dragLine !== null) {
-      this.dragLine.draw(self.ctx);
-    }
-
-    this.subNodes.forEach(function(subnode) {
-      subnode.drawSubNode(self.ctx);
-    });
-
-    this.lines.forEach(function(line) {
-      line.draw(self.ctx);
-    });
-
-    this.balls.forEach(function(ball) {
-      ball.updatePosition();
-      ball.draw(self.ctx);
-    });
-
-    console.log("BALLS", this.balls);
-    requestAnimationFrame(this.animate.bind(this));
   }
 }
 

@@ -4,7 +4,7 @@ class PowerBall {
     this.y = line.y;
     this.x2 = line.x2;
     this.y2 = line.y2;
-    this.percent = 1 / 1000;
+    this.percent = 1 / Math.sqrt(Math.pow((this.x2-this.x),2) + Math.pow((this.y2-this.y),2));
     this.associatedNode = node;
   }
 

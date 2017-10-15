@@ -1,7 +1,30 @@
 #game {
   display: flex;
   justify-content: center;
+}
 
+#SplashScreen {
+  /*display: flex;
+  justify-content: center;
+
+  flex-direction: column;*/
+  display: flex;
+  /*position: relative;*/
+  flex-direction: row;
+  justify-content: center;
+ }
+
+#img1 {
+  position: absolute;
+}
+
+#vid {
+  margin-left: -10px;
+  position: absolute;
+}
+#StartButton {
+  margin-top: 400px;
+  position: relative;
 }
 #canvas {
   border: #666 1px solid;
