@@ -73,12 +73,6 @@ class Game {
   }
   step(timeDelta) {
   }
-  draw(ctx) {
-    // this.x += 1;
-    // ctx.fillRect(this.x, 25, 100, 100);
-    // ctx.clearRect(45, 45, 60, 60);
-    // ctx.strokeRect(50, this.x, 50, 50);
-  }
   drawPausedScreen(ctx) {
     ctx.globalAlpha = .4;
     ctx.fillStyle = 'black';
@@ -163,20 +157,15 @@ class GameView {
     this.canvas.addEventListener('mousedown', function() {
         let xCord = event.offsetX;
         let yCord = event.offsetY;
-
         self.stored.forEach(function(sourcenode) {
-          self.test2(xCord, yCord, sourcenode);
-
+          self.userInput(xCord, yCord, sourcenode);
         });
-
         self.subNodes.forEach(function(subnode) {
-          self.test2(xCord, yCord, subnode);
+          self.userInput(xCord, yCord, subnode);
         });
     });
 
     document.addEventListener('keydown', function(e) {
-      const key = e.target;
-      console.log("KEEEEEEEYYYYY", e.keyCode);
       if (e.keyCode === 80 && self.paused === false) {
         self.paused = true;
       } else {
@@ -186,22 +175,18 @@ class GameView {
     });
   }
 
-  test2(xCord, yCord, node) {
+  userInput(xCord, yCord, node) {
     let self = this;
     if (xCord >= node.xRange[0] && xCord <= node.xRange[1] &&
       yCord >= node.yRange[0] && yCord <= node.yRange[1]) {
         let addVal = node.val;
         self.canvas.addEventListener('mousemove', function handler(e) {
-
           const xCordMove = event.offsetX;
           const yCordMove = event.offsetY;
-
-          const dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
-          self.dragLine = dragLine;
+          self.dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
           self.canvas.addEventListener('mouseup', function handler2(e2) {
             e2.currentTarget.removeEventListener(e2.type, handler2);
             e2.currentTarget.removeEventListener(e.type, handler);
-
             self.dragLine = null;
           });
         });
@@ -218,12 +203,16 @@ class GameView {
           }
 
           while (subNodeIdx < self.subNodes.length) {
-            if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] && xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
-              yCordUp >= self.subNodes[subNodeIdx].yRange[0] && yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
+            if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] &&
+                xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
+                yCordUp >= self.subNodes[subNodeIdx].yRange[0] &&
+                yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
                 self.subNodes[subNodeIdx].val += addVal;
-                self.lines.push(self.dragLine);
+
                 if (node instanceof SourceNode) {
                   node.addLines(self.dragLine);
+                } else {
+                  self.lines.push(self.dragLine);
                 }
                 addUp = true;
                 break;
@@ -231,14 +220,12 @@ class GameView {
               subNodeIdx += 1;
           }
           if (addUp === false) {
-            const subNode2 = new SubNode(xCordUp, yCordUp, self.ctx, addVal);
-            self.subNodes.push(subNode2);
+            self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
             if (node instanceof SourceNode) {
               node.addLines(self.dragLine);
             } else {
               self.lines.push(self.dragLine);
             }
-
           } else {
             addUp = false;
           }
@@ -250,12 +237,6 @@ class GameView {
   start() {
     this.lastTime = 0;
     requestAnimationFrame(this.animate.bind(this));
-  }
-
-  drawAllSourceNodes() {
-    this.stored.forEach(function(sourcenode) {
-      sourcenode.drawSourceNode(self.ctx);
-    });
   }
 
   animate(time) {
@@ -303,9 +284,7 @@ class GameView {
     } else {
       this.game.drawPausedScreen(this.ctx);
       this.ctx.globalAlpha = 1;
-      console.log("PAUSeD");
     }
-
   }
 }
 

@@ -4,12 +4,6 @@ class Game {
   }
   step(timeDelta) {
   }
-  draw(ctx) {
-    // this.x += 1;
-    // ctx.fillRect(this.x, 25, 100, 100);
-    // ctx.clearRect(45, 45, 60, 60);
-    // ctx.strokeRect(50, this.x, 50, 50);
-  }
   drawPausedScreen(ctx) {
     ctx.globalAlpha = .4;
     ctx.fillStyle = 'black';
