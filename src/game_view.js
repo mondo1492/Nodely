@@ -30,6 +30,7 @@ class GameView {
 
         self.stored.forEach(function(sourcenode) {
           self.test2(xCord, yCord, sourcenode);
+
         });
 
         self.subNodes.forEach(function(subnode) {
@@ -41,11 +42,7 @@ class GameView {
       const key = e.target;
       console.log("KEEEEEEEYYYYY", e.keyCode);
       if (e.keyCode === 80 && self.paused === false) {
-
         self.paused = true;
-
-        // self.ctx.clearRect(0, 0, Game.DIM_X, Game.DIM_Y);
-
       } else {
         self.paused = false;
         requestAnimationFrame(self.animate.bind(self));
@@ -111,11 +108,18 @@ class GameView {
           }
         });
       }
+
   }
 
   start() {
     this.lastTime = 0;
     requestAnimationFrame(this.animate.bind(this));
+  }
+
+  drawAllSourceNodes() {
+    this.stored.forEach(function(sourcenode) {
+      sourcenode.drawSourceNode(self.ctx);
+    });
   }
 
   animate(time) {
@@ -124,57 +128,45 @@ class GameView {
       let newStore = [];
       const timeDelta = time - this.lastTime;
       this.ctx.clearRect(0, 0, Game.DIM_X, Game.DIM_Y);
-
+      if (this.dragLine !== null) {
+        this.dragLine.draw(self.ctx);
+      }
       this.stored.forEach(function(sourcenode) {
         sourcenode.updateTimeAlive();
         if (sourcenode.timeAlive !== 0) {
           newStore.push(sourcenode);
         }
         self.stored = newStore;
-        sourcenode.drawSourceNode(self.ctx);
-        console.log("LINES", sourcenode.lines);
         sourcenode.lines.forEach(function(line) {
           line.draw(self.ctx);
         });
-      });
-
-
-
-      if (this.interval === 250) {
-        this.stored.push(new SourceNode(this.stored));
-
-
-        this.game.step(timeDelta);
-        this.game.draw(this.ctx);
-        this.lastTime = time;
-        this.interval = 0;
-      } else {
-        this.interval += 1;
-        this.interval2 += 1;
-      }
-
-      if (this.dragLine !== null) {
-        this.dragLine.draw(self.ctx);
-      }
-
-      this.subNodes.forEach(function(subnode) {
-        subnode.drawSubNode(self.ctx);
+        sourcenode.drawSourceNode(self.ctx);
       });
 
       this.lines.forEach(function(line) {
         line.draw(self.ctx);
       });
 
+      if (this.interval === 250) {
+        this.stored.push(new SourceNode(this.stored));
+        this.game.step(timeDelta);
+        this.lastTime = time;
+        this.interval = 0;
+      } else {
+        this.interval += 1;
+        this.interval2 += 1;
+      }
+      this.subNodes.forEach(function(subnode) {
+        subnode.drawSubNode(self.ctx);
+      });
       this.balls.forEach(function(ball) {
         ball.updatePosition();
         ball.draw(self.ctx);
       });
-
-      console.log("BALLS", this.balls);
       requestAnimationFrame(this.animate.bind(this));
     } else {
-      // this.ctx.globalAlpha = .1;
       this.game.drawPausedScreen(this.ctx);
+      this.ctx.globalAlpha = 1;
       console.log("PAUSeD");
     }
 
