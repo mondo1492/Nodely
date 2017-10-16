@@ -78,11 +78,13 @@ class GameView {
                 yCordUp >= self.subNodes[subNodeIdx].yRange[0] &&
                 yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
                 self.subNodes[subNodeIdx].val += addVal;
-
+                node.associated.push(self.subNodes[subNodeIdx]);
+                console.log("SUBNODEIDX", subNodeIdx);
                 if (node instanceof SourceNode) {
                   node.addLines(self.dragLine);
                 } else {
-                  self.lines.push(self.dragLine);
+                  node.addLines(self.dragLine);
+                  // self.lines.push(self.dragLine);
                 }
                 addUp = true;
                 break;
@@ -91,10 +93,12 @@ class GameView {
           }
           if (addUp === false) {
             self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
+            node.associated.push(self.subNodes[subNodeIdx]);
             if (node instanceof SourceNode) {
               node.addLines(self.dragLine);
             } else {
-              self.lines.push(self.dragLine);
+              node.addLines(self.dragLine);
+              // self.lines.push(self.dragLine);
             }
           } else {
             addUp = false;
@@ -120,8 +124,23 @@ class GameView {
       }
       this.stored.forEach(function(sourcenode) {
         sourcenode.updateTimeAlive();
-        if (sourcenode.timeAlive !== 0) {
+        if (sourcenode.timeAlive > 0) {
           newStore.push(sourcenode);
+        } else if (sourcenode.associated.length > 0){
+          console.log(sourcenode.associated);
+          sourcenode.associated.forEach(function(subnode){
+            console.log(subnode);
+            let updateQueue = [subnode];
+            let currentSubNode;
+            while (updateQueue.length > 0) {
+              currentSubNode = updateQueue.shift();
+              console.log(currentSubNode);
+              currentSubNode.val -= sourcenode.val;
+              currentSubNode.associated.forEach(function(subnode2){
+                updateQueue.push(subnode2);
+              });
+            }
+          });
         }
         self.stored = newStore;
         sourcenode.lines.forEach(function(line) {
@@ -143,9 +162,19 @@ class GameView {
         this.interval += 1;
         this.interval2 += 1;
       }
+      const subNodeStore = [];
       this.subNodes.forEach(function(subnode) {
-        subnode.drawSubNode(self.ctx);
+
+        if (subnode.val > 0) {
+          subnode.lines.forEach(function(line) {
+            line.draw(self.ctx);
+          });
+          subNodeStore.push(subnode);
+          subnode.drawSubNode(self.ctx);
+        }
+
       });
+      self.subNodes = subNodeStore;
       this.balls.forEach(function(ball) {
         ball.updatePosition();
         ball.draw(self.ctx);

@@ -13,6 +13,7 @@ class SourceNode {
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
     this.timeAlive = 1000;
+    this.associated = [];
   }
 
   updateTimeAlive() {

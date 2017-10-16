@@ -9,7 +9,14 @@ class SubNode {
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
     this.val = initialVal;
+    this.associated = [];
+    this.lines = [];
   }
+
+  addLines(line) {
+    this.lines.push(line);
+  }
+
   drawSubNode() {
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, 15, 0, 2 * Math.PI, false);
