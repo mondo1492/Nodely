@@ -145,6 +145,7 @@ class GameView {
     this.subNodes = [];
     this.lines = [];
     this.balls = [];
+    this.subNodeBalls = [];
     this.paused = false;
     this.dragLine = null;
     this.canvas = document.getElementById("canvas");
@@ -180,6 +181,7 @@ class GameView {
     if (xCord >= node.xRange[0] && xCord <= node.xRange[1] &&
       yCord >= node.yRange[0] && yCord <= node.yRange[1]) {
         let addVal = node.val;
+        // console.log(node.addedValues);
         self.canvas.addEventListener('mousemove', function handler(e) {
           const xCordMove = event.offsetX;
           const yCordMove = event.offsetY;
@@ -197,25 +199,32 @@ class GameView {
           let addUp = false;
           let subNodeIdx = 0;
           if (node instanceof SourceNode) {
-            node.addLines(self.dragLine);
+            // node.addLines(self.dragLine);
             const powerBall = new PowerBall(self.dragLine, node);
-            self.balls.push(powerBall);
+            self.dragLine.balls.push(powerBall);
+            // self.balls.push(powerBall);
+          } else {
+            // node.addLines(self.dragLine);
+            const powerBall = new PowerBall(self.dragLine, node);
+            console.log("THIS is a node", node);
+            self.dragLine.balls.push(powerBall);
           }
-
+          // node.addLines(self.dragLine);
           while (subNodeIdx < self.subNodes.length) {
             if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] &&
                 xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
                 yCordUp >= self.subNodes[subNodeIdx].yRange[0] &&
                 yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
                 self.subNodes[subNodeIdx].val += addVal;
+                self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
+                // destNode.addedValues[String(self.subNodes[subNodeIdx].uniqId)] = 0;
+                // self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
+                // self.subNodes[subNodeIdx].updateAddedValues(node.id); // took this out for now
                 node.associated.push(self.subNodes[subNodeIdx]);
-                console.log("SUBNODEIDX", subNodeIdx);
-                if (node instanceof SourceNode) {
-                  node.addLines(self.dragLine);
-                } else {
-                  node.addLines(self.dragLine);
-                  // self.lines.push(self.dragLine);
-                }
+                node.addLines(self.dragLine);
+                // if (node instanceof SubNode) {
+                //     node.updateAddedValues(node.uniqId);
+                // }
                 addUp = true;
                 break;
               }
@@ -223,7 +232,9 @@ class GameView {
           }
           if (addUp === false) {
             self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
+            self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
             node.associated.push(self.subNodes[subNodeIdx]);
+            // self.subNodes[subNodeIdx].updateAddedValues(node.id);
             if (node instanceof SourceNode) {
               node.addLines(self.dragLine);
             } else {
@@ -243,6 +254,25 @@ class GameView {
     requestAnimationFrame(this.animate.bind(this));
   }
 
+  drawBallsFromLine(line, node) {
+    let self = this;
+    let ballIdx = 0;
+    const newBallStore = [];
+    while (ballIdx < line.balls.length) {
+      let ball = line.balls[ballIdx];
+      ball.draw(self.ctx);
+      ball.updatePosition();
+      if (ball.reachedDestination()) {
+        ball.destinationNode.updateAddedValues(ball.associatedNode.uniqId);
+      } else {
+        ball.destinationNode.setAddedValues(ball.associatedNode.uniqId);
+        newBallStore.push(ball);
+      }
+      ballIdx += 1;
+    }
+    line.balls = newBallStore;
+  }
+
   animate(time) {
     if (this.paused === false) {
       let self = this;
@@ -257,14 +287,11 @@ class GameView {
         if (sourcenode.timeAlive > 0) {
           newStore.push(sourcenode);
         } else if (sourcenode.associated.length > 0){
-          console.log(sourcenode.associated);
           sourcenode.associated.forEach(function(subnode){
-            console.log(subnode);
             let updateQueue = [subnode];
             let currentSubNode;
             while (updateQueue.length > 0) {
               currentSubNode = updateQueue.shift();
-              console.log(currentSubNode);
               currentSubNode.val -= sourcenode.val;
               currentSubNode.associated.forEach(function(subnode2){
                 updateQueue.push(subnode2);
@@ -274,18 +301,14 @@ class GameView {
         }
         self.stored = newStore;
         sourcenode.lines.forEach(function(line) {
+          self.drawBallsFromLine(line);
           line.draw(self.ctx);
         });
         sourcenode.drawSourceNode(self.ctx);
       });
 
-      this.lines.forEach(function(line) {
-        line.draw(self.ctx);
-      });
-
-      if (this.interval === 250) {
+      if (this.interval === 400) {
         this.stored.push(new SourceNode(this.stored));
-        this.game.step(timeDelta);
         this.lastTime = time;
         this.interval = 0;
       } else {
@@ -297,6 +320,11 @@ class GameView {
 
         if (subnode.val > 0) {
           subnode.lines.forEach(function(line) {
+            if (subnode.isFullyPowered()) {
+              console.log(subnode.isFullyPowered());
+              self.drawBallsFromLine(line, subnode);
+            }
+
             line.draw(self.ctx);
           });
           subNodeStore.push(subnode);
@@ -305,10 +333,10 @@ class GameView {
 
       });
       self.subNodes = subNodeStore;
-      this.balls.forEach(function(ball) {
-        ball.updatePosition();
-        ball.draw(self.ctx);
-      });
+      // this.balls.forEach(function(ball) {
+      //   ball.updatePosition();
+      //   ball.draw(self.ctx);
+      // });
       requestAnimationFrame(this.animate.bind(this));
     } else {
       this.game.drawPausedScreen(this.ctx);
@@ -331,6 +359,7 @@ class SourceNode {
     this.x = this.generateRandomX();
     this.y = this.generateRandomY();
     this.assureNonOverlapPosition(stored);
+    this.uniqId = Math.floor(Math.random() * (10000000000000000)) + 1;
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
     this.lines = [];
@@ -338,7 +367,7 @@ class SourceNode {
     this.val = Math.floor(Math.random() * (5)) + 1;
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
-    this.timeAlive = 1000;
+    this.timeAlive = 2500;
     this.associated = [];
   }
 
@@ -417,21 +446,67 @@ module.exports = SourceNode;
 const Game = __webpack_require__(0);
 
 class SubNode {
-  constructor(x, y, ctx, initialVal) {
+  constructor(x, y, ctx, initialVal, sourceId) {
     this.ctx = ctx;
     this.x = x;
     this.y = y;
+    this.addedValues = {};
+    this.uniqId = Math.floor(Math.random() * (10000000000000000)) + 1;
+    // this.addValues[String(this.uniqId)] = 0;
     this.lines = [];
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
     this.val = initialVal;
     this.associated = [];
     this.lines = [];
+    this.count = 0;
+
   }
 
   addLines(line) {
     this.lines.push(line);
   }
+
+  isFullyPowered() {
+    if (Object.keys(this.addedValues).length === 0) {
+      return false;
+    }
+    let fullyPowered = true;
+    Object.keys(this.addedValues).forEach((key) => {
+      if (this.addedValues[key] === 0) {
+        fullyPowered = false;
+      }
+    });
+    // console.log(this.addedValues);
+    // console.log("FULLY POWERED", fullyPowered);
+    return fullyPowered;
+  }
+
+  decreaseValuesByOne() {
+    Object.keys(this.addedValues).forEach((key) => {
+      this.addedValues[key] -= 1;
+    });
+  }
+
+  setAddedValues(id) {
+    if (!(String(id) in this.addedValues)) {
+      this.addedValues[String(id)] = 0;
+      console.log("SETTTTT", this.count,  this.addedValues);
+    }
+
+  }
+
+  updateAddedValues(id) {
+    this.count += 1;
+    let stringId = String(id);
+    if (stringId in this.addedValues) {
+      this.addedValues[stringId] += 1;
+    } else {
+      this.addedValues[stringId] = 1;
+    }
+    // console.log("ADDDEEEEEDDDDDD", this.count,  this.addedValues);
+  }
+
 
   drawSubNode() {
     this.ctx.beginPath();
@@ -463,6 +538,7 @@ class DragLine {
     this.x2 = x2;
     this.y2 = y2;
     this.pos = [];
+    this.balls = [];
   }
   draw(ctx) {
     ctx.beginPath();
@@ -470,6 +546,10 @@ class DragLine {
     ctx.moveTo(this.x, this.y);
     ctx.lineTo(this.x2, this.y2);
     ctx.stroke();
+  }
+
+  addBall(ball) {
+    this.balls.push(ball);
   }
 }
 
@@ -487,7 +567,9 @@ class PowerBall {
     this.x2 = line.x2;
     this.y2 = line.y2;
     this.percent = 1 / Math.sqrt(Math.pow((this.x2-this.x),2) + Math.pow((this.y2-this.y),2));
+    this.percentUpdate = this.percent;
     this.associatedNode = node;
+    this.destinationNode = null;
   }
 
   draw(ctx) {
@@ -497,18 +579,18 @@ class PowerBall {
     ctx.fill();
     ctx.lineWidth = 5;
     ctx.strokeStyle = '#003300';
-
     ctx.stroke();
   }
 
-  collideWith() {
-
+  reachedDestination() {
+    return Math.round(this.x2) === Math.round(this.x) &&
+    Math.round(this.y2) === Math.round(this.y);
   }
 
   updatePosition() {
     this.x += (this.x2 - this.x) * this.percent;
     this.y += (this.y2 - this.y) * this.percent;
-    this.percent += .00001;
+    this.percent +=   (this.percentUpdate / 100);
   }
 }
 

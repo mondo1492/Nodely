@@ -5,6 +5,7 @@ class SourceNode {
     this.x = this.generateRandomX();
     this.y = this.generateRandomY();
     this.assureNonOverlapPosition(stored);
+    this.uniqId = Math.floor(Math.random() * (10000000000000000)) + 1;
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
     this.lines = [];
@@ -12,7 +13,7 @@ class SourceNode {
     this.val = Math.floor(Math.random() * (5)) + 1;
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
-    this.timeAlive = 1000;
+    this.timeAlive = 2500;
     this.associated = [];
   }
 
