@@ -15,12 +15,13 @@ class SourceNode {
     this.color = SourceNode.ASSOC_COLOR[this.val];
     this.timeAlive = 2500;
     this.associated = [];
-    this.countDown = 300;
+    this.countDown = 0;
+    this.lineIdx = 0;
   }
 
   updateTimeAlive() {
     this.timeAlive -= 1;
-    this.countDown -= 1;
+    // this.countDown -= 1;
   }
 
   addLines(line) {

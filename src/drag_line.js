@@ -6,6 +6,9 @@ class DragLine {
     this.y2 = y2;
     this.pos = [];
     this.balls = [];
+    this.associatedNode = null;
+    this.destinationNode = null;
+    this.defaultBall = null;
   }
   draw(ctx) {
     ctx.beginPath();

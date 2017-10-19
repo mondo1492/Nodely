@@ -16,12 +16,13 @@ class GameView {
     this.stored = [];
     this.subNodes = [];
     this.lines = [];
-    this.ballsQueue = [];
+    this.lineQueue = [];
     this.subNodeBalls = [];
     this.gameOver = false;
     this.sinkNodes = [];
     this.paused = false;
     this.dragLine = null;
+    this.count = 0;
     this.canvas = document.getElementById("canvas");
     this.registerEventListener = this.registerEventListener.bind(this);
     this.registerEventListener();
@@ -43,7 +44,7 @@ class GameView {
     document.addEventListener('keydown', function(e) {
       if (e.keyCode === 80 && self.paused === false) {
         self.paused = true;
-      } else {
+      } else if (e.keyCode === 80 && self.paused === true) {
         self.paused = false;
         requestAnimationFrame(self.animate.bind(self));
       }
@@ -55,7 +56,6 @@ class GameView {
     if (xCord >= node.xRange[0] && xCord <= node.xRange[1] &&
       yCord >= node.yRange[0] && yCord <= node.yRange[1]) {
         let addVal = node.val;
-        // console.log(node.addedValues);
         self.canvas.addEventListener('mousemove', function handler(e) {
           const xCordMove = event.offsetX;
           const yCordMove = event.offsetY;
@@ -76,12 +76,15 @@ class GameView {
             // node.addLines(self.dragLine);
             const powerBall = new PowerBall(self.dragLine, node);
             self.dragLine.balls.push(powerBall);
+            self.dragLine.defaultBall = new PowerBall(self.dragLine, node);
+            self.dragLine.associatedNode = node;
             // self.balls.push(powerBall);
           } else {
             // node.addLines(self.dragLine);
             const powerBall = new PowerBall(self.dragLine, node);
-            console.log("THIS is a node", node);
             self.dragLine.balls.push(powerBall);
+            self.dragLine.defaultBall = new PowerBall(self.dragLine, node);
+            self.dragLine.associatedNode = node;
           }
           // node.addLines(self.dragLine);
           while (subNodeIdx < self.subNodes.length) {
@@ -91,6 +94,8 @@ class GameView {
                 yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
                 self.subNodes[subNodeIdx].val += addVal;
                 self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
+                self.dragLine.defaultBall.destinationNode = self.subNodes[subNodeIdx];
+                self.dragLine.destinationNode = self.subNodes[subNodeIdx];
                 // destNode.addedValues[String(self.subNodes[subNodeIdx].uniqId)] = 0;
                 // self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
                 // self.subNodes[subNodeIdx].updateAddedValues(node.id); // took this out for now
@@ -114,6 +119,8 @@ class GameView {
 
                 if (self.sinkNodes[sinkNodeIdx].val === addVal) {
                   self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
+                  self.dragLine.defaultBall.destinationNode = self.sinkNodes[sinkNodeIdx];
+                  self.dragLine.destinationNode = self.sinkNodes[sinkNodeIdx];
                   node.associated.push(self.sinkNodes[sinkNodeIdx]);
                   self.sinkNodes[sinkNodeIdx].addLines(self.dragLine);
                 }
@@ -131,6 +138,8 @@ class GameView {
           if (addUp === false && toSinkNode === false) {
             self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
             self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
+            self.dragLine.defaultBall.destinationNode = self.subNodes[subNodeIdx];
+            self.dragLine.destinationNode = self.subNodes[subNodeIdx];
             node.associated.push(self.subNodes[subNodeIdx]);
             // self.subNodes[subNodeIdx].updateAddedValues(node.id);
             if (node instanceof SourceNode) {
@@ -156,6 +165,7 @@ class GameView {
     let self = this;
     let ballIdx = 0;
     const newBallStore = [];
+
     while (ballIdx < line.balls.length) {
       let ball = line.balls[ballIdx];
       ball.draw(self.ctx);
@@ -169,12 +179,13 @@ class GameView {
         if (!ball.destinationNode instanceof SinkNode) {
           ball.destinationNode.setAddedValues(ball.associatedNode.uniqId);
         }
-
-        // newBallStore.push(ball);
+        newBallStore.push(ball);
       }
       ballIdx += 1;
     }
-    // line.balls = newBallStore;
+    // console.log(newBallStore.length);
+    // console.log();
+    line.balls = newBallStore;
   }
 
   animate(time) {
@@ -205,9 +216,39 @@ class GameView {
         }
         self.stored = newStore;
         sourcenode.lines.forEach(function(line) {
-          self.drawBallsFromLine(line);
+
+          // self.drawBallsFromLine(line);
           line.draw(self.ctx);
         });
+        if (sourcenode.lines.length > 0) {
+          console.log(sourcenode.countDown);
+        }
+
+        if (sourcenode.countDown === 0) {
+          sourcenode.countDown = 200;
+          if (sourcenode.lines[sourcenode.lineIdx]) {
+            let tester = new DragLine();
+            tester.balls.push(new PowerBall(sourcenode.lines[sourcenode.lineIdx],
+              sourcenode.lines[sourcenode.lineIdx].associatedNode,
+              sourcenode.lines[sourcenode.lineIdx].destinationNode));
+
+            self.lineQueue.push(tester);
+            // sourcenode.lines[sourcenode.lineIdx].addBall(sourcenode.lines[sourcenode.lineIdx].defaultBall);
+          }
+          sourcenode.lineIdx += 1;
+
+
+
+          if (sourcenode.lineIdx >= sourcenode.lines.length) {
+            sourcenode.lineIdx = 0;
+          }
+
+
+        } else {
+          sourcenode.countDown -= 1;
+        }
+
+
         sourcenode.drawSourceNode(self.ctx);
       });
 
@@ -266,10 +307,12 @@ class GameView {
       self.sinkNodes = sinkNodeStore;
 
 
-      // this.balls.forEach(function(ball) {
-      //   ball.updatePosition();
-      //   ball.draw(self.ctx);
-      // });
+      self.lineQueue.forEach(function(line) {
+        self.drawBallsFromLine(line);
+      });
+      // console.log(timeDelta);
+      this.lastTime = time;
+      // console.log(timeDelta);
       requestAnimationFrame(this.animate.bind(this));
     } else if (this.paused === true) {
       this.game.drawPausedScreen(this.ctx);

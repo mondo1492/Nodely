@@ -1,13 +1,15 @@
 class PowerBall {
-  constructor(line, node) {
+  constructor(line, node, dest) {
     this.x = line.x;
     this.y = line.y;
     this.x2 = line.x2;
     this.y2 = line.y2;
-    this.percent = 1 / Math.sqrt(Math.pow((this.x2-this.x),2) + Math.pow((this.y2-this.y),2));
-    this.percentUpdate = this.percent;
+    // this.percent = 1 / Math.sqrt(Math.pow((this.x2-this.x),2) + Math.pow((this.y2-this.y),2));
+    this.xIncrease = (this.x2 - this.x) / 100;
+    this.yIncrease = (this.y2 - this.y) / 100;
+    // this.percentUpdate = this.percent;
     this.associatedNode = node;
-    this.destinationNode = null;
+    this.destinationNode = dest;
   }
 
   draw(ctx) {
@@ -26,9 +28,11 @@ class PowerBall {
   }
 
   updatePosition() {
-    this.x += (this.x2 - this.x) * this.percent;
-    this.y += (this.y2 - this.y) * this.percent;
-    this.percent +=   (this.percentUpdate / 100);
+    // this.x += (this.x2 - this.x) * this.percent;
+    // this.y += (this.y2 - this.y) * this.percent;
+    // this.percent +=   (this.percentUpdate / 100);
+    this.x += this.xIncrease;
+    this.y += this.yIncrease;
   }
 }
 
