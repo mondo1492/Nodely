@@ -4,6 +4,7 @@ const SourceNode = require("./source_node");
 const SubNode = require("./sub_node");
 const DragLine = require("./drag_line");
 const PowerBall = require("./power_ball");
+const SinkNode = require("./sink_node");
 
 class GameView {
   constructor(game, ctx) {
@@ -11,11 +12,14 @@ class GameView {
     this.game = game;
     this.interval = 0;
     this.interval2 = 0;
+    this.newGame = true;
     this.stored = [];
     this.subNodes = [];
     this.lines = [];
-    this.balls = [];
+    this.ballsQueue = [];
     this.subNodeBalls = [];
+    this.gameOver = false;
+    this.sinkNodes = [];
     this.paused = false;
     this.dragLine = null;
     this.canvas = document.getElementById("canvas");
@@ -100,7 +104,31 @@ class GameView {
               }
               subNodeIdx += 1;
           }
-          if (addUp === false) {
+          let sinkNodeIdx = 0;
+          let toSinkNode = false;
+          while (sinkNodeIdx < self.sinkNodes.length) {
+            if (xCordUp >= self.sinkNodes[sinkNodeIdx].xRange[0] &&
+                xCordUp <= self.sinkNodes[sinkNodeIdx].xRange[1] &&
+                yCordUp >= self.sinkNodes[sinkNodeIdx].yRange[0] &&
+                yCordUp <= self.sinkNodes[sinkNodeIdx].yRange[1]) {
+
+                if (self.sinkNodes[sinkNodeIdx].val === addVal) {
+                  self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
+                  node.associated.push(self.sinkNodes[sinkNodeIdx]);
+                  self.sinkNodes[sinkNodeIdx].addLines(self.dragLine);
+                }
+
+                // if (node instanceof SubNode) {
+                //     node.updateAddedValues(node.uniqId);
+                // }
+                toSinkNode = true;
+                break;
+              }
+              sinkNodeIdx += 1;
+          }
+
+
+          if (addUp === false && toSinkNode === false) {
             self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
             self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
             node.associated.push(self.subNodes[subNodeIdx]);
@@ -132,19 +160,25 @@ class GameView {
       let ball = line.balls[ballIdx];
       ball.draw(self.ctx);
       ball.updatePosition();
-      if (ball.reachedDestination()) {
+      if (ball.reachedDestination() && ball.destinationNode instanceof SinkNode) {
+        ball.destinationNode.currentTally += 1;
+        ball.destinationNode.degrees = 360;
+      } else if (ball.reachedDestination()) {
         ball.destinationNode.updateAddedValues(ball.associatedNode.uniqId);
       } else {
-        ball.destinationNode.setAddedValues(ball.associatedNode.uniqId);
-        newBallStore.push(ball);
+        if (!ball.destinationNode instanceof SinkNode) {
+          ball.destinationNode.setAddedValues(ball.associatedNode.uniqId);
+        }
+
+        // newBallStore.push(ball);
       }
       ballIdx += 1;
     }
-    line.balls = newBallStore;
+    // line.balls = newBallStore;
   }
 
   animate(time) {
-    if (this.paused === false) {
+    if (this.paused === false && this.gameOver === false) {
       let self = this;
       let newStore = [];
       const timeDelta = time - this.lastTime;
@@ -177,8 +211,16 @@ class GameView {
         sourcenode.drawSourceNode(self.ctx);
       });
 
-      if (this.interval === 400) {
+      if (this.newGame) {
         this.stored.push(new SourceNode(this.stored));
+        this.stored.push(new SourceNode(this.stored));
+        this.sinkNodes.push(new SinkNode(this.sinkNodes, 5));
+        this.newGame = false;
+      }
+
+      if (this.interval === 1000) {
+        this.stored.push(new SourceNode(this.stored));
+        this.sinkNodes.push(new SinkNode(this.sinkNodes));
         this.lastTime = time;
         this.interval = 0;
       } else {
@@ -203,14 +245,37 @@ class GameView {
 
       });
       self.subNodes = subNodeStore;
+
+
+      const sinkNodeStore = [];
+      this.sinkNodes.forEach(function(sinknode) {
+        sinknode.updateTimeAlive();
+        if (sinknode.outOfTime === true) {
+          self.gameOver = true;
+        }
+        if (sinknode.currentTally < sinknode.finalTally) {
+          sinknode.lines.forEach(function(line) {
+            self.drawBallsFromLine(line);
+            line.draw(self.ctx);
+          });
+          sinkNodeStore.push(sinknode);
+          sinknode.drawSinkNode(self.ctx);
+        }
+
+      });
+      self.sinkNodes = sinkNodeStore;
+
+
       // this.balls.forEach(function(ball) {
       //   ball.updatePosition();
       //   ball.draw(self.ctx);
       // });
       requestAnimationFrame(this.animate.bind(this));
-    } else {
+    } else if (this.paused === true) {
       this.game.drawPausedScreen(this.ctx);
       this.ctx.globalAlpha = 1;
+    } else {
+      this.game.drawGameOverScreen(this.ctx);
     }
   }
 }

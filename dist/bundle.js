@@ -81,6 +81,14 @@ class Game {
     ctx.fillText("PAUSED", (Game.DIM_X / 2) - 200, (Game.DIM_Y / 2) + 20);
     ctx.globalAlpha = 1;
   }
+  drawGameOverScreen(ctx) {
+    ctx.globalAlpha = .4;
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, Game.DIM_X, Game.DIM_Y);
+    ctx.font = "100px Arial";
+    ctx.fillText("GameOver", (Game.DIM_X / 2) - 200, (Game.DIM_Y / 2) + 20);
+    ctx.globalAlpha = 1;
+  }
 }
 Game.DIM_X = 1000;
 Game.DIM_Y = 600;
@@ -134,6 +142,7 @@ const SourceNode = __webpack_require__(3);
 const SubNode = __webpack_require__(4);
 const DragLine = __webpack_require__(5);
 const PowerBall = __webpack_require__(6);
+const SinkNode = __webpack_require__(8);
 
 class GameView {
   constructor(game, ctx) {
@@ -141,11 +150,14 @@ class GameView {
     this.game = game;
     this.interval = 0;
     this.interval2 = 0;
+    this.newGame = true;
     this.stored = [];
     this.subNodes = [];
     this.lines = [];
-    this.balls = [];
+    this.ballsQueue = [];
     this.subNodeBalls = [];
+    this.gameOver = false;
+    this.sinkNodes = [];
     this.paused = false;
     this.dragLine = null;
     this.canvas = document.getElementById("canvas");
@@ -230,7 +242,31 @@ class GameView {
               }
               subNodeIdx += 1;
           }
-          if (addUp === false) {
+          let sinkNodeIdx = 0;
+          let toSinkNode = false;
+          while (sinkNodeIdx < self.sinkNodes.length) {
+            if (xCordUp >= self.sinkNodes[sinkNodeIdx].xRange[0] &&
+                xCordUp <= self.sinkNodes[sinkNodeIdx].xRange[1] &&
+                yCordUp >= self.sinkNodes[sinkNodeIdx].yRange[0] &&
+                yCordUp <= self.sinkNodes[sinkNodeIdx].yRange[1]) {
+
+                if (self.sinkNodes[sinkNodeIdx].val === addVal) {
+                  self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
+                  node.associated.push(self.sinkNodes[sinkNodeIdx]);
+                  self.sinkNodes[sinkNodeIdx].addLines(self.dragLine);
+                }
+
+                // if (node instanceof SubNode) {
+                //     node.updateAddedValues(node.uniqId);
+                // }
+                toSinkNode = true;
+                break;
+              }
+              sinkNodeIdx += 1;
+          }
+
+
+          if (addUp === false && toSinkNode === false) {
             self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
             self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
             node.associated.push(self.subNodes[subNodeIdx]);
@@ -262,19 +298,25 @@ class GameView {
       let ball = line.balls[ballIdx];
       ball.draw(self.ctx);
       ball.updatePosition();
-      if (ball.reachedDestination()) {
+      if (ball.reachedDestination() && ball.destinationNode instanceof SinkNode) {
+        ball.destinationNode.currentTally += 1;
+        ball.destinationNode.degrees = 360;
+      } else if (ball.reachedDestination()) {
         ball.destinationNode.updateAddedValues(ball.associatedNode.uniqId);
       } else {
-        ball.destinationNode.setAddedValues(ball.associatedNode.uniqId);
-        newBallStore.push(ball);
+        if (!ball.destinationNode instanceof SinkNode) {
+          ball.destinationNode.setAddedValues(ball.associatedNode.uniqId);
+        }
+
+        // newBallStore.push(ball);
       }
       ballIdx += 1;
     }
-    line.balls = newBallStore;
+    // line.balls = newBallStore;
   }
 
   animate(time) {
-    if (this.paused === false) {
+    if (this.paused === false && this.gameOver === false) {
       let self = this;
       let newStore = [];
       const timeDelta = time - this.lastTime;
@@ -307,8 +349,16 @@ class GameView {
         sourcenode.drawSourceNode(self.ctx);
       });
 
-      if (this.interval === 400) {
+      if (this.newGame) {
         this.stored.push(new SourceNode(this.stored));
+        this.stored.push(new SourceNode(this.stored));
+        this.sinkNodes.push(new SinkNode(this.sinkNodes, 5));
+        this.newGame = false;
+      }
+
+      if (this.interval === 1000) {
+        this.stored.push(new SourceNode(this.stored));
+        this.sinkNodes.push(new SinkNode(this.sinkNodes));
         this.lastTime = time;
         this.interval = 0;
       } else {
@@ -333,14 +383,37 @@ class GameView {
 
       });
       self.subNodes = subNodeStore;
+
+
+      const sinkNodeStore = [];
+      this.sinkNodes.forEach(function(sinknode) {
+        sinknode.updateTimeAlive();
+        if (sinknode.outOfTime === true) {
+          self.gameOver = true;
+        }
+        if (sinknode.currentTally < sinknode.finalTally) {
+          sinknode.lines.forEach(function(line) {
+            self.drawBallsFromLine(line);
+            line.draw(self.ctx);
+          });
+          sinkNodeStore.push(sinknode);
+          sinknode.drawSinkNode(self.ctx);
+        }
+
+      });
+      self.sinkNodes = sinkNodeStore;
+
+
       // this.balls.forEach(function(ball) {
       //   ball.updatePosition();
       //   ball.draw(self.ctx);
       // });
       requestAnimationFrame(this.animate.bind(this));
-    } else {
+    } else if (this.paused === true) {
       this.game.drawPausedScreen(this.ctx);
       this.ctx.globalAlpha = 1;
+    } else {
+      this.game.drawGameOverScreen(this.ctx);
     }
   }
 }
@@ -369,10 +442,12 @@ class SourceNode {
     this.color = SourceNode.ASSOC_COLOR[this.val];
     this.timeAlive = 2500;
     this.associated = [];
+    this.countDown = 300;
   }
 
   updateTimeAlive() {
     this.timeAlive -= 1;
+    this.countDown -= 1;
   }
 
   addLines(line) {
@@ -542,6 +617,7 @@ class DragLine {
   }
   draw(ctx) {
     ctx.beginPath();
+    ctx.lineWidth = 5;
     ctx.strokStyle = "black";
     ctx.moveTo(this.x, this.y);
     ctx.lineTo(this.x2, this.y2);
@@ -609,6 +685,102 @@ class Util {
     return 400;
   }
 }
+
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+const Game = __webpack_require__(0);
+
+
+class SinkNode {
+  constructor(stored, initialVal) {
+    this.x = this.generateRandomX();
+    this.y = this.generateRandomY();
+    this.assureNonOverlapPosition(stored);
+    this.uniqId = Math.floor(Math.random() * (10000000000000000)) + 1;
+    this.xRange = [this.x - 25, this.x + 25];
+    this.yRange = [this.y - 25, this.y + 25];
+    this.lines = [];
+    this.currentTally = 0;
+    this.finalTally = 2;
+    this.currentLine = 0;
+    this.val = initialVal || (Math.floor(Math.random() * (12)) + 1);
+    this.factor = 0.3;
+    this.color = SinkNode.ASSOC_COLOR[this.val];
+    this.timeAlive = 4500;
+    this.associated = [];
+    this.lines = [];
+    this.count = 0;
+    this.outOfTime = false;
+    this.degrees = 360;
+  }
+
+  updateTimeAlive() {
+    this.timeAlive -= 1;
+    this.degrees -= .1;
+    if (this.degrees <= 0) {
+      this.outOfTime = true;
+    }
+  }
+
+  addLines(line) {
+    this.lines.push(line);
+  }
+
+
+  assureNonOverlapPosition(stored) {
+    for (let i = 0; i < stored.length; i++) {
+      if (this.x >= stored[i].xRange[0] - 50 &&
+          this.x <= stored[i].xRange[1] + 50 &&
+          this.y >= stored[i].yRange[0] - 50 &&
+          this.y <= stored[i].yRange[1] + 50)
+          {
+            this.x = this.generateRandomX();
+            this.y = this.generateRandomY();
+            i = 0;
+          }
+    }
+  }
+
+  generateRandomX() {
+    return Math.floor(Math.random() * (Game.DIM_X - 60) + 20);
+  }
+
+  generateRandomY() {
+    return Math.floor(Math.random() * (Game.DIM_Y - 110) + 20);
+  }
+
+  drawSinkNode(ctx) {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 25, 0, this.degrees * Math.PI / 180, false);
+    ctx.fillStyle = Game.COLORS[this.val];
+    ctx.fill();
+    ctx.lineWidth = 15;
+    ctx.strokeStyle = '#003300';
+
+    ctx.font = "30px Georgia";
+    ctx.fillStyle = "#000000";
+
+
+
+    ctx.fillStyle = 'white';
+    ctx.fillText(this.val, this.x - 8, this.y + 5);
+    ctx.stroke();
+
+  }
+}
+
+SinkNode.ASSOC_COLOR = {
+  1: "#F5F5DC",
+  2: "#FFFF00",
+  3: "#0000FF",
+  4: "#FFA500",
+  5: "#28C928"
+};
+
+module.exports = SinkNode;
 
 
 /***/ })

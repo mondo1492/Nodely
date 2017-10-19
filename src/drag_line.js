@@ -9,6 +9,7 @@ class DragLine {
   }
   draw(ctx) {
     ctx.beginPath();
+    ctx.lineWidth = 5;
     ctx.strokStyle = "black";
     ctx.moveTo(this.x, this.y);
     ctx.lineTo(this.x2, this.y2);

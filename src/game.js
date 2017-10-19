@@ -12,6 +12,14 @@ class Game {
     ctx.fillText("PAUSED", (Game.DIM_X / 2) - 200, (Game.DIM_Y / 2) + 20);
     ctx.globalAlpha = 1;
   }
+  drawGameOverScreen(ctx) {
+    ctx.globalAlpha = .4;
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, Game.DIM_X, Game.DIM_Y);
+    ctx.font = "100px Arial";
+    ctx.fillText("GameOver", (Game.DIM_X / 2) - 200, (Game.DIM_Y / 2) + 20);
+    ctx.globalAlpha = 1;
+  }
 }
 Game.DIM_X = 1000;
 Game.DIM_Y = 600;
