@@ -27,7 +27,7 @@ class SinkNode {
   updateTimeAlive() {
     this.timeAlive -= 1;
     this.degrees -= .1;
-    if (this.degrees <= 0) {
+    if (this.degrees <= 1) {
       this.outOfTime = true;
     }
   }
