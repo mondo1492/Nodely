@@ -233,6 +233,31 @@ class GameView {
                 self.subNodes[subNodeIdx].updateAddedValues(node.uniqId);
                 node.associated.push(self.subNodes[subNodeIdx]);
                 node.addLines(self.dragLine);
+
+
+                let currentCheckNode = [self.subNodes[subNodeIdx]];
+                let currentSum = self.subNodes[subNodeIdx].val;
+                while (currentCheckNode.length > 0) {
+                  let currentNode = currentCheckNode.shift();
+                  currentNode.lines.forEach(function(line){
+                    if (line.destinationNode.val < currentSum) {
+
+                        if (line.destinationNode instanceof SubNode) {
+                          line.destinationNode.val += addVal;
+                        //     currentCheckNode.push(nextLine.destinationNode);
+                        currentCheckNode.push(line.destinationNode);
+                          }
+
+
+                      // line.destinationNode.lines.forEach(function(nextLine) {
+                      //   if (nextLine.destinationNode instanceof SubNode) {
+                      //     currentCheckNode.push(nextLine.destinationNode);
+                      //   }
+                      //   });
+                    }
+                    // currentCheckNode.push()
+                  });
+                }
                 addUp = true;
                 break;
               }
@@ -337,7 +362,11 @@ class GameView {
             let currentSubNode;
             while (updateQueue.length > 0) {
               currentSubNode = updateQueue.shift();
-              currentSubNode.val -= sourcenode.val;
+              //did this here so that sinknodes doesn't lose its value
+              if (currentSubNode instanceof SubNode) {
+                currentSubNode.val -= sourcenode.val;
+              }
+
               currentSubNode.associated.forEach(function(subnode2){
                 updateQueue.push(subnode2);
               });
