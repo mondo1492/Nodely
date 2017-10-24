@@ -73,20 +73,16 @@ class GameView {
           let addUp = false;
           let subNodeIdx = 0;
           if (node instanceof SourceNode) {
-            // node.addLines(self.dragLine);
             const powerBall = new PowerBall(self.dragLine, node);
             self.dragLine.balls.push(powerBall);
             self.dragLine.defaultBall = new PowerBall(self.dragLine, node);
             self.dragLine.associatedNode = node;
-            // self.balls.push(powerBall);
           } else {
-            // node.addLines(self.dragLine);
             const powerBall = new PowerBall(self.dragLine, node);
             self.dragLine.balls.push(powerBall);
             self.dragLine.defaultBall = new PowerBall(self.dragLine, node);
             self.dragLine.associatedNode = node;
           }
-          // node.addLines(self.dragLine);
           while (subNodeIdx < self.subNodes.length) {
             if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] &&
                 xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
@@ -96,14 +92,9 @@ class GameView {
                 self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
                 self.dragLine.defaultBall.destinationNode = self.subNodes[subNodeIdx];
                 self.dragLine.destinationNode = self.subNodes[subNodeIdx];
-                // destNode.addedValues[String(self.subNodes[subNodeIdx].uniqId)] = 0;
-                // self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
-                // self.subNodes[subNodeIdx].updateAddedValues(node.id); // took this out for now
+                self.subNodes[subNodeIdx].updateAddedValues(node.uniqId);
                 node.associated.push(self.subNodes[subNodeIdx]);
                 node.addLines(self.dragLine);
-                // if (node instanceof SubNode) {
-                //     node.updateAddedValues(node.uniqId);
-                // }
                 addUp = true;
                 break;
               }
@@ -118,16 +109,20 @@ class GameView {
                 yCordUp <= self.sinkNodes[sinkNodeIdx].yRange[1]) {
 
                 if (self.sinkNodes[sinkNodeIdx].val === addVal) {
+                  //trying to add to subnode instead of sinknode
+                  // self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
                   self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
                   self.dragLine.defaultBall.destinationNode = self.sinkNodes[sinkNodeIdx];
                   self.dragLine.destinationNode = self.sinkNodes[sinkNodeIdx];
                   node.associated.push(self.sinkNodes[sinkNodeIdx]);
-                  self.sinkNodes[sinkNodeIdx].addLines(self.dragLine);
+                  node.addLines(self.dragLine);
+                  //taking out for now
+                  // self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
+                  // self.dragLine.defaultBall.destinationNode = self.sinkNodes[sinkNodeIdx];
+                  // self.dragLine.destinationNode = self.sinkNodes[sinkNodeIdx];
+                  // node.associated.push(self.sinkNodes[sinkNodeIdx]);
+                  // self.sinkNodes[sinkNodeIdx].addLines(self.dragLine);
                 }
-
-                // if (node instanceof SubNode) {
-                //     node.updateAddedValues(node.uniqId);
-                // }
                 toSinkNode = true;
                 break;
               }
@@ -136,18 +131,15 @@ class GameView {
 
 
           if (addUp === false && toSinkNode === false) {
-            self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
+            let newNode = new SubNode(xCordUp, yCordUp, self.ctx, addVal, node.uniqId);
+            console.log("FALLLLLLSE");
+            self.subNodes.push(newNode);
             self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
             self.dragLine.defaultBall.destinationNode = self.subNodes[subNodeIdx];
             self.dragLine.destinationNode = self.subNodes[subNodeIdx];
             node.associated.push(self.subNodes[subNodeIdx]);
             // self.subNodes[subNodeIdx].updateAddedValues(node.id);
-            if (node instanceof SourceNode) {
-              node.addLines(self.dragLine);
-            } else {
-              node.addLines(self.dragLine);
-              // self.lines.push(self.dragLine);
-            }
+            node.addLines(self.dragLine);
           } else {
             addUp = false;
           }
@@ -216,13 +208,8 @@ class GameView {
         }
         self.stored = newStore;
         sourcenode.lines.forEach(function(line) {
-
-          // self.drawBallsFromLine(line);
           line.draw(self.ctx);
         });
-        if (sourcenode.lines.length > 0) {
-          console.log(sourcenode.countDown);
-        }
 
         if (sourcenode.countDown === 0) {
           sourcenode.countDown = 200;
@@ -270,12 +257,22 @@ class GameView {
       }
       const subNodeStore = [];
       this.subNodes.forEach(function(subnode) {
-
         if (subnode.val > 0) {
           subnode.lines.forEach(function(line) {
             if (subnode.isFullyPowered()) {
-              console.log(subnode.isFullyPowered());
-              self.drawBallsFromLine(line, subnode);
+                if (subnode.lines[subnode.lineIdx]) {
+                  let tester2 = new DragLine();
+                  tester2.balls.push(new PowerBall(
+                    subnode.lines[subnode.lineIdx],
+                    subnode.lines[subnode.lineIdx].associatedNode,
+                    subnode.lines[subnode.lineIdx].destinationNode));
+                  self.lineQueue.push(tester2);
+                }
+                subnode.lineIdx += 1;
+                if (subnode.lineIdx >= subnode.lines.length) {
+                  subnode.lineIdx = 0;
+                }
+                subnode.decreaseValuesByOne();
             }
 
             line.draw(self.ctx);
@@ -301,6 +298,27 @@ class GameView {
           });
           sinkNodeStore.push(sinknode);
           sinknode.drawSinkNode(self.ctx);
+        } else {
+
+          self.subNodes.forEach(function(subnode) {
+            let newLines = [];
+            subnode.lines.forEach(function(line) {
+              if (line.destinationNode !== sinknode) {
+                newLines.push(line);
+              }
+            });
+            subnode.lines = newLines;
+          });
+
+          self.stored.forEach(function(sourcenode) {
+            let newLines = [];
+            sourcenode.lines.forEach(function(line) {
+              if (line.destinationNode !== sinknode) {
+                newLines.push(line);
+              }
+            });
+            sourcenode.lines = newLines;
+          });
         }
 
       });

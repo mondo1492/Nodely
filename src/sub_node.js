@@ -7,7 +7,7 @@ class SubNode {
     this.y = y;
     this.addedValues = {};
     this.uniqId = Math.floor(Math.random() * (10000000000000000)) + 1;
-    // this.addValues[String(this.uniqId)] = 0;
+    this.addedValues[String(sourceId)] = 0;
     this.lines = [];
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
@@ -15,6 +15,7 @@ class SubNode {
     this.associated = [];
     this.lines = [];
     this.count = 0;
+    this.lineIdx = 0;
 
   }
 
@@ -32,8 +33,8 @@ class SubNode {
         fullyPowered = false;
       }
     });
-    // console.log(this.addedValues);
-    // console.log("FULLY POWERED", fullyPowered);
+    console.log(this.addedValues);
+    console.log("FULLY POWERED", fullyPowered);
     return fullyPowered;
   }
 
@@ -57,7 +58,7 @@ class SubNode {
     if (stringId in this.addedValues) {
       this.addedValues[stringId] += 1;
     } else {
-      this.addedValues[stringId] = 1;
+      this.addedValues[stringId] = 0;
     }
     // console.log("ADDDEEEEEDDDDDD", this.count,  this.addedValues);
   }

@@ -117,7 +117,7 @@ module.exports = Game;
 
 const Game = __webpack_require__(0);
 const GameView = __webpack_require__(2);
-const Util = __webpack_require__(7);
+const Util = __webpack_require__(8);
 
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById('StartButton').addEventListener('click', function() {
@@ -142,7 +142,7 @@ const SourceNode = __webpack_require__(3);
 const SubNode = __webpack_require__(4);
 const DragLine = __webpack_require__(5);
 const PowerBall = __webpack_require__(6);
-const SinkNode = __webpack_require__(8);
+const SinkNode = __webpack_require__(7);
 
 class GameView {
   constructor(game, ctx) {
@@ -211,20 +211,16 @@ class GameView {
           let addUp = false;
           let subNodeIdx = 0;
           if (node instanceof SourceNode) {
-            // node.addLines(self.dragLine);
             const powerBall = new PowerBall(self.dragLine, node);
             self.dragLine.balls.push(powerBall);
             self.dragLine.defaultBall = new PowerBall(self.dragLine, node);
             self.dragLine.associatedNode = node;
-            // self.balls.push(powerBall);
           } else {
-            // node.addLines(self.dragLine);
             const powerBall = new PowerBall(self.dragLine, node);
             self.dragLine.balls.push(powerBall);
             self.dragLine.defaultBall = new PowerBall(self.dragLine, node);
             self.dragLine.associatedNode = node;
           }
-          // node.addLines(self.dragLine);
           while (subNodeIdx < self.subNodes.length) {
             if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] &&
                 xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
@@ -234,14 +230,9 @@ class GameView {
                 self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
                 self.dragLine.defaultBall.destinationNode = self.subNodes[subNodeIdx];
                 self.dragLine.destinationNode = self.subNodes[subNodeIdx];
-                // destNode.addedValues[String(self.subNodes[subNodeIdx].uniqId)] = 0;
-                // self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
-                // self.subNodes[subNodeIdx].updateAddedValues(node.id); // took this out for now
+                self.subNodes[subNodeIdx].updateAddedValues(node.uniqId);
                 node.associated.push(self.subNodes[subNodeIdx]);
                 node.addLines(self.dragLine);
-                // if (node instanceof SubNode) {
-                //     node.updateAddedValues(node.uniqId);
-                // }
                 addUp = true;
                 break;
               }
@@ -256,16 +247,20 @@ class GameView {
                 yCordUp <= self.sinkNodes[sinkNodeIdx].yRange[1]) {
 
                 if (self.sinkNodes[sinkNodeIdx].val === addVal) {
+                  //trying to add to subnode instead of sinknode
+                  // self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
                   self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
                   self.dragLine.defaultBall.destinationNode = self.sinkNodes[sinkNodeIdx];
                   self.dragLine.destinationNode = self.sinkNodes[sinkNodeIdx];
                   node.associated.push(self.sinkNodes[sinkNodeIdx]);
-                  self.sinkNodes[sinkNodeIdx].addLines(self.dragLine);
+                  node.addLines(self.dragLine);
+                  //taking out for now
+                  // self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
+                  // self.dragLine.defaultBall.destinationNode = self.sinkNodes[sinkNodeIdx];
+                  // self.dragLine.destinationNode = self.sinkNodes[sinkNodeIdx];
+                  // node.associated.push(self.sinkNodes[sinkNodeIdx]);
+                  // self.sinkNodes[sinkNodeIdx].addLines(self.dragLine);
                 }
-
-                // if (node instanceof SubNode) {
-                //     node.updateAddedValues(node.uniqId);
-                // }
                 toSinkNode = true;
                 break;
               }
@@ -274,18 +269,15 @@ class GameView {
 
 
           if (addUp === false && toSinkNode === false) {
-            self.subNodes.push(new SubNode(xCordUp, yCordUp, self.ctx, addVal));
+            let newNode = new SubNode(xCordUp, yCordUp, self.ctx, addVal, node.uniqId);
+            console.log("FALLLLLLSE");
+            self.subNodes.push(newNode);
             self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
             self.dragLine.defaultBall.destinationNode = self.subNodes[subNodeIdx];
             self.dragLine.destinationNode = self.subNodes[subNodeIdx];
             node.associated.push(self.subNodes[subNodeIdx]);
             // self.subNodes[subNodeIdx].updateAddedValues(node.id);
-            if (node instanceof SourceNode) {
-              node.addLines(self.dragLine);
-            } else {
-              node.addLines(self.dragLine);
-              // self.lines.push(self.dragLine);
-            }
+            node.addLines(self.dragLine);
           } else {
             addUp = false;
           }
@@ -354,13 +346,8 @@ class GameView {
         }
         self.stored = newStore;
         sourcenode.lines.forEach(function(line) {
-
-          // self.drawBallsFromLine(line);
           line.draw(self.ctx);
         });
-        if (sourcenode.lines.length > 0) {
-          console.log(sourcenode.countDown);
-        }
 
         if (sourcenode.countDown === 0) {
           sourcenode.countDown = 200;
@@ -408,12 +395,22 @@ class GameView {
       }
       const subNodeStore = [];
       this.subNodes.forEach(function(subnode) {
-
         if (subnode.val > 0) {
           subnode.lines.forEach(function(line) {
             if (subnode.isFullyPowered()) {
-              console.log(subnode.isFullyPowered());
-              self.drawBallsFromLine(line, subnode);
+                if (subnode.lines[subnode.lineIdx]) {
+                  let tester2 = new DragLine();
+                  tester2.balls.push(new PowerBall(
+                    subnode.lines[subnode.lineIdx],
+                    subnode.lines[subnode.lineIdx].associatedNode,
+                    subnode.lines[subnode.lineIdx].destinationNode));
+                  self.lineQueue.push(tester2);
+                }
+                subnode.lineIdx += 1;
+                if (subnode.lineIdx >= subnode.lines.length) {
+                  subnode.lineIdx = 0;
+                }
+                subnode.decreaseValuesByOne();
             }
 
             line.draw(self.ctx);
@@ -439,6 +436,27 @@ class GameView {
           });
           sinkNodeStore.push(sinknode);
           sinknode.drawSinkNode(self.ctx);
+        } else {
+
+          self.subNodes.forEach(function(subnode) {
+            let newLines = [];
+            subnode.lines.forEach(function(line) {
+              if (line.destinationNode !== sinknode) {
+                newLines.push(line);
+              }
+            });
+            subnode.lines = newLines;
+          });
+
+          self.stored.forEach(function(sourcenode) {
+            let newLines = [];
+            sourcenode.lines.forEach(function(line) {
+              if (line.destinationNode !== sinknode) {
+                newLines.push(line);
+              }
+            });
+            sourcenode.lines = newLines;
+          });
         }
 
       });
@@ -571,7 +589,7 @@ class SubNode {
     this.y = y;
     this.addedValues = {};
     this.uniqId = Math.floor(Math.random() * (10000000000000000)) + 1;
-    // this.addValues[String(this.uniqId)] = 0;
+    this.addedValues[String(sourceId)] = 0;
     this.lines = [];
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
@@ -579,6 +597,7 @@ class SubNode {
     this.associated = [];
     this.lines = [];
     this.count = 0;
+    this.lineIdx = 0;
 
   }
 
@@ -596,8 +615,8 @@ class SubNode {
         fullyPowered = false;
       }
     });
-    // console.log(this.addedValues);
-    // console.log("FULLY POWERED", fullyPowered);
+    console.log(this.addedValues);
+    console.log("FULLY POWERED", fullyPowered);
     return fullyPowered;
   }
 
@@ -621,7 +640,7 @@ class SubNode {
     if (stringId in this.addedValues) {
       this.addedValues[stringId] += 1;
     } else {
-      this.addedValues[stringId] = 1;
+      this.addedValues[stringId] = 0;
     }
     // console.log("ADDDEEEEEDDDDDD", this.count,  this.addedValues);
   }
@@ -726,20 +745,6 @@ module.exports = PowerBall;
 
 /***/ }),
 /* 7 */
-/***/ (function(module, exports) {
-
-class Util {
-  x() {
-    return 1000;
-  }
-  y() {
-    return 400;
-  }
-}
-
-
-/***/ }),
-/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const Game = __webpack_require__(0);
@@ -832,6 +837,20 @@ SinkNode.ASSOC_COLOR = {
 };
 
 module.exports = SinkNode;
+
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports) {
+
+class Util {
+  x() {
+    return 1000;
+  }
+  y() {
+    return 400;
+  }
+}
 
 
 /***/ })
