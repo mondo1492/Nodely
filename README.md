@@ -1,4 +1,4 @@
-See my progress at https://mondo1492.github.io/Nodely/
+See my progress at https://mondo1492.github.io/Nodely/dist/index.html
 
 Background
 
