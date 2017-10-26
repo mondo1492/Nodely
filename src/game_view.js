@@ -76,22 +76,22 @@ class GameView {
           }
           subNodeIdx += 1;
         }
-      // while (sourceNodeIdx < this.stored.length) {
-      //   if (!(xCord >= this.stored[sourceNodeIdx].xRange[0] &&
-      //       xCord <= this.stored[sourceNodeIdx].xRange[1] &&
-      //       yCord >= this.stored[sourceNodeIdx].yRange[0] &&
-      //       yCord <= this.stored[sourceNodeIdx].yRange[1])) {
-      //         for (let i = 0; i < this.stored[sourceNodeIdx].lines.length; i++) {
-      //           if (xCord >= this.stored[sourceNodeIdx].lines[i].destinationNode.xRange[0] &&
-      //               xCord <= this.stored[sourceNodeIdx].lines[i].destinationNode.xRange[1] &&
-      //               yCord >= this.stored[sourceNodeIdx].lines[i].destinationNode.yRange[0] &&
-      //               yCord <= this.stored[sourceNodeIdx].lines[i].destinationNode.yRange[1]) {
-      //             this.stored[sourceNodeIdx].deleteLine(i);
-      //           }
-      //         }
-      //       }
-      //       sourceNodeIdx += 1;
-      //     }
+      while (sourceNodeIdx < this.stored.length) {
+        if (!(xCord >= this.stored[sourceNodeIdx].xRange[0] &&
+            xCord <= this.stored[sourceNodeIdx].xRange[1] &&
+            yCord >= this.stored[sourceNodeIdx].yRange[0] &&
+            yCord <= this.stored[sourceNodeIdx].yRange[1])) {
+              for (let i = 0; i < this.stored[sourceNodeIdx].lines.length; i++) {
+                if (xCord >= this.stored[sourceNodeIdx].lines[i].destinationNode.xRange[0] &&
+                    xCord <= this.stored[sourceNodeIdx].lines[i].destinationNode.xRange[1] &&
+                    yCord >= this.stored[sourceNodeIdx].lines[i].destinationNode.yRange[0] &&
+                    yCord <= this.stored[sourceNodeIdx].lines[i].destinationNode.yRange[1]) {
+                  this.stored[sourceNodeIdx].deleteLine(i);
+                }
+              }
+            }
+            sourceNodeIdx += 1;
+          }
       self.skipMouseMove = false;
       this.subNodes = newNodes;
   }
