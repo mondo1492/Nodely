@@ -19,6 +19,10 @@ class SourceNode {
     this.lineIdx = 0;
   }
 
+  deleteLine(idx) {
+    this.lines.splice(idx, 1);
+  }
+  
   updateTimeAlive() {
     this.timeAlive -= 1;
     // this.countDown -= 1;

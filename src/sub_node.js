@@ -23,6 +23,10 @@ class SubNode {
     this.lines.push(line);
   }
 
+  deleteLine(idx) {
+    this.lines.splice(idx, 1);
+  }
+
   isFullyPowered() {
     if (Object.keys(this.addedValues).length === 0) {
       return false;
@@ -33,8 +37,6 @@ class SubNode {
         fullyPowered = false;
       }
     });
-    console.log(this.addedValues);
-    console.log("FULLY POWERED", fullyPowered);
     return fullyPowered;
   }
 
