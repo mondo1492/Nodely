@@ -54,14 +54,11 @@ class GameView {
 
 
   deleteNode(xCord, yCord) {
-
-    ///fix this
+    ///Still need to fix this method
     let subNodeIdx = 0;
     let sourceNodeIdx = 0;
     let newNodes = [];
-    // let newLines = [];
     let self = this;
-    console.log('Delete');
     while (subNodeIdx < this.subNodes.length) {
       if (!(xCord >= this.subNodes[subNodeIdx].xRange[0] &&
           xCord <= this.subNodes[subNodeIdx].xRange[1] &&
@@ -79,7 +76,6 @@ class GameView {
           }
           subNodeIdx += 1;
         }
-
       // while (sourceNodeIdx < this.stored.length) {
       //   if (!(xCord >= this.stored[sourceNodeIdx].xRange[0] &&
       //       xCord <= this.stored[sourceNodeIdx].xRange[1] &&
@@ -119,10 +115,7 @@ class GameView {
     if (xCord >= node.xRange[0] && xCord <= node.xRange[1] &&
       yCord >= node.yRange[0] && yCord <= node.yRange[1]) {
         let addVal = node.val;
-
-
         self.canvas.addEventListener('mousemove', function handler(e) {
-          console.log('mousemoving');
           const xCordMove = event.offsetX;
           const yCordMove = event.offsetY;
           if (self.skipMouseMove) {
@@ -130,9 +123,7 @@ class GameView {
             e.currentTarget.removeEventListener(e.type, handler);
           }
           self.dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
-
           self.canvas.addEventListener('mouseup', function handler2(e2) {
-
             e2.currentTarget.removeEventListener(e2.type, handler2);
             e2.currentTarget.removeEventListener(e.type, handler);
             // self.dragLine = null;
@@ -140,11 +131,9 @@ class GameView {
         });
         self.canvas.addEventListener('mouseup', function handler(e) {
           e.currentTarget.removeEventListener(e.type, handler);
-
           const xCordUp = event.offsetX;
           const yCordUp = event.offsetY;
           if (xCord === xCordUp && yCord === yCordUp) {
-            console.log("SAMESIES");
             self.deleteNode(xCord, yCord);
             self.skipMouseMove = true;
             e.currentTarget.removeEventListener(e.type, handler);
@@ -154,12 +143,10 @@ class GameView {
           let addUp = false;
           let sameChain = false;
           let subNodeIdx = 0;
-          console.log(self.dragLine);
           const powerBall = new PowerBall(self.dragLine, node);
           self.dragLine.balls.push(powerBall);
           self.dragLine.defaultBall = new PowerBall(self.dragLine, node);
           self.dragLine.associatedNode = node;
-
           while (subNodeIdx < self.subNodes.length) {
             if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] &&
                 xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
@@ -176,8 +163,6 @@ class GameView {
                 self.subNodes[subNodeIdx].updateAddedValues(node.uniqId);
                 node.associated.push(self.subNodes[subNodeIdx]);
                 node.addLines(self.dragLine);
-
-
                 let currentCheckNode = [self.subNodes[subNodeIdx]];
                 let currentSum = self.subNodes[subNodeIdx].val;
                 while (currentCheckNode.length > 0) {
@@ -203,26 +188,17 @@ class GameView {
                 yCordUp <= self.sinkNodes[sinkNodeIdx].yRange[1]) {
 
                 if (self.sinkNodes[sinkNodeIdx].val === addVal) {
-                  //trying to add to subnode instead of sinknode
                   self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
                   self.dragLine.defaultBall.destinationNode = self.sinkNodes[sinkNodeIdx];
                   self.dragLine.destinationNode = self.sinkNodes[sinkNodeIdx];
                   node.associated.push(self.sinkNodes[sinkNodeIdx]);
                   node.addLines(self.dragLine);
-                  //taking out for now
-                  // self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
-                  // self.dragLine.defaultBall.destinationNode = self.sinkNodes[sinkNodeIdx];
-                  // self.dragLine.destinationNode = self.sinkNodes[sinkNodeIdx];
-                  // node.associated.push(self.sinkNodes[sinkNodeIdx]);
-                  // self.sinkNodes[sinkNodeIdx].addLines(self.dragLine);
                 }
                 toSinkNode = true;
                 break;
               }
               sinkNodeIdx += 1;
           }
-
-
           if (!addUp && !toSinkNode && !sameChain) {
             let newNode = new SubNode(xCordUp, yCordUp, self.ctx, addVal, node.uniqId);
             self.subNodes.push(newNode);
@@ -237,7 +213,6 @@ class GameView {
           }
         });
       }
-
   }
 
   start() {
@@ -251,7 +226,6 @@ class GameView {
     const newBallStore = [];
 
     while (ballIdx < line.balls.length) {
-      // let ball = line.balls[ballIdx];
       let ball = line.balls[0];
       ball.draw(self.ctx);
       ball.updatePosition();
@@ -268,11 +242,8 @@ class GameView {
       }
       ballIdx += 1;
     }
-    // console.log(newBallStore.length);
-    // console.log();
     line.balls = newBallStore;
   }
-
 
   animate(time) {
     if (this.paused === false && this.gameOver === false) {
@@ -293,11 +264,9 @@ class GameView {
             let currentSubNode;
             while (updateQueue.length > 0) {
               currentSubNode = updateQueue.shift();
-              //did this here so that sinknodes doesn't lose its value
               if (currentSubNode instanceof SubNode) {
                 currentSubNode.val -= sourcenode.val;
               }
-
               currentSubNode.associated.forEach(function(subnode2){
                 updateQueue.push(subnode2);
               });
@@ -308,7 +277,6 @@ class GameView {
         sourcenode.lines.forEach(function(line) {
           line.draw(self.ctx);
         });
-
         if (sourcenode.countDown === 0) {
           sourcenode.countDown = 200;
           if (sourcenode.lines[sourcenode.lineIdx]) {
@@ -316,34 +284,25 @@ class GameView {
             tester.balls.push(new PowerBall(sourcenode.lines[sourcenode.lineIdx],
               sourcenode.lines[sourcenode.lineIdx].associatedNode,
               sourcenode.lines[sourcenode.lineIdx].destinationNode));
-
             self.lineQueue.push(tester);
             // sourcenode.lines[sourcenode.lineIdx].addBall(sourcenode.lines[sourcenode.lineIdx].defaultBall);
           }
           sourcenode.lineIdx += 1;
-
-
-
           if (sourcenode.lineIdx >= sourcenode.lines.length) {
             sourcenode.lineIdx = 0;
           }
 
-
         } else {
           sourcenode.countDown -= 1;
         }
-
-
         sourcenode.drawSourceNode(self.ctx);
       });
-
       if (this.newGame) {
         this.stored.push(new SourceNode(this.stored));
         this.stored.push(new SourceNode(this.stored));
         this.sinkNodes.push(new SinkNode(this.sinkNodes, 5));
         this.newGame = false;
       }
-
       if (this.interval === 1000) {
         this.stored.push(new SourceNode(this.stored));
         this.sinkNodes.push(new SinkNode(this.sinkNodes));
@@ -378,11 +337,8 @@ class GameView {
           subNodeStore.push(subnode);
           subnode.drawSubNode(self.ctx);
         }
-
       });
       self.subNodes = subNodeStore;
-
-
       const sinkNodeStore = [];
       this.sinkNodes.forEach(function(sinknode) {
         sinknode.updateTimeAlive();
@@ -397,7 +353,6 @@ class GameView {
           sinkNodeStore.push(sinknode);
           sinknode.drawSinkNode(self.ctx);
         } else {
-
           self.subNodes.forEach(function(subnode) {
             let newLines = [];
             subnode.lines.forEach(function(line) {
@@ -407,7 +362,6 @@ class GameView {
             });
             subnode.lines = newLines;
           });
-
           self.stored.forEach(function(sourcenode) {
             let newLines = [];
             sourcenode.lines.forEach(function(line) {
@@ -418,17 +372,12 @@ class GameView {
             sourcenode.lines = newLines;
           });
         }
-
       });
       self.sinkNodes = sinkNodeStore;
-
-
       self.lineQueue.forEach(function(line) {
         self.drawBallsFromLine(line);
       });
-      // console.log(timeDelta);
       this.lastTime = time;
-      // console.log(timeDelta);
       requestAnimationFrame(this.animate.bind(this));
     } else if (this.paused === true) {
       this.game.drawPausedScreen(this.ctx);

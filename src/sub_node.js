@@ -16,7 +16,6 @@ class SubNode {
     this.lines = [];
     this.count = 0;
     this.lineIdx = 0;
-
   }
 
   addLines(line) {
@@ -49,9 +48,7 @@ class SubNode {
   setAddedValues(id) {
     if (!(String(id) in this.addedValues)) {
       this.addedValues[String(id)] = 0;
-      console.log("SETTTTT", this.count,  this.addedValues);
     }
-
   }
 
   updateAddedValues(id) {
@@ -62,7 +59,6 @@ class SubNode {
     } else {
       this.addedValues[stringId] = 0;
     }
-    // console.log("ADDDEEEEEDDDDDD", this.count,  this.addedValues);
   }
 
 
@@ -73,7 +69,6 @@ class SubNode {
     this.ctx.fill();
     this.ctx.lineWidth = 5;
     this.ctx.strokeStyle = '#003300';
-
     this.ctx.font = "20px Georgia";
     this.ctx.fillStyle = "#000000";
     this.ctx.fillText(this.val, this.x - 5, this.y + 30);

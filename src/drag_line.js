@@ -10,6 +10,7 @@ class DragLine {
     this.destinationNode = null;
     this.defaultBall = null;
   }
+
   draw(ctx) {
     ctx.beginPath();
     ctx.lineWidth = 5;

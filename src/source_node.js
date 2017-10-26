@@ -22,10 +22,9 @@ class SourceNode {
   deleteLine(idx) {
     this.lines.splice(idx, 1);
   }
-  
+
   updateTimeAlive() {
     this.timeAlive -= 1;
-    // this.countDown -= 1;
   }
 
   addLines(line) {
@@ -61,23 +60,15 @@ class SourceNode {
     ctx.lineTo(this.x + 150 * this.factor,this.y + 100 * this.factor);
     ctx.lineTo(this.x + 75 * this.factor, this.y + 200 * this.factor);
     ctx.lineTo(this.x + 0 * this.factor,this.y + 100 * this.factor);
-
-    //Define the style of the shape
     ctx.lineWidth = 6;
-
     ctx.strokeStyle = "#000000";
     ctx.font = "20px Georgia";
     ctx.fillStyle = "#000000";
     ctx.fillText(this.val, this.x + 58 * this.factor, this.y + 275 * this.factor);
     ctx.fillStyle = this.color;
-
-    //Close the path
     ctx.closePath();
-
-    //Fill the path with ourline and color
     ctx.fill();
     ctx.stroke();
-
   }
 }
 

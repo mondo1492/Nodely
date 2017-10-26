@@ -2,8 +2,7 @@ class Game {
   constructor() {
     this.x = 25;
   }
-  step(timeDelta) {
-  }
+
   drawPausedScreen(ctx) {
     ctx.globalAlpha = .4;
     ctx.fillStyle = 'black';
@@ -12,6 +11,7 @@ class Game {
     ctx.fillText("PAUSED", (Game.DIM_X / 2) - 200, (Game.DIM_Y / 2) + 20);
     ctx.globalAlpha = 1;
   }
+
   drawGameOverScreen(ctx) {
     ctx.globalAlpha = .4;
     ctx.fillStyle = 'black';
@@ -21,6 +21,7 @@ class Game {
     ctx.globalAlpha = 1;
   }
 }
+
 Game.DIM_X = 1000;
 Game.DIM_Y = 600;
 Game.COLORS = {
