@@ -1,16 +1,15 @@
 const Game = require("./game");
 
 class SourceNode {
-  constructor(stored) {
+  constructor(allNodes, val) {
     this.x = this.generateRandomX();
     this.y = this.generateRandomY();
-    this.assureNonOverlapPosition(stored);
+    this.assureNonOverlapPosition(allNodes);
     this.uniqId = Math.floor(Math.random() * (10000000000000000)) + 1;
     this.xRange = [this.x - 40, this.x + 40];
     this.yRange = [this.y - 40, this.y + 40];
     this.lines = [];
-    this.currentLine = 0;
-    this.val = Math.floor(Math.random() * (5)) + 1;
+    this.val = val ? val : Math.floor(Math.random() * (5)) + 1;
     this.factor = 0.2;
     this.color = SourceNode.ASSOC_COLOR[this.val];
     this.timeAlive = 2500;
@@ -32,12 +31,12 @@ class SourceNode {
   }
 
 
-  assureNonOverlapPosition(stored) {
-    for (let i = 0; i < stored.length; i++) {
-      if (this.x >= stored[i].xRange[0] - 50 &&
-          this.x <= stored[i].xRange[1] + 50 &&
-          this.y >= stored[i].yRange[0] - 50 &&
-          this.y <= stored[i].yRange[1] + 50)
+  assureNonOverlapPosition(allNodes) {
+    for (let i = 0; i < allNodes.length; i++) {
+      if (this.x >= allNodes[i].xRange[0] - 50 &&
+          this.x <= allNodes[i].xRange[1] + 50 &&
+          this.y >= allNodes[i].yRange[0] - 50 &&
+          this.y <= allNodes[i].yRange[1] + 50)
           {
             this.x = this.generateRandomX();
             this.y = this.generateRandomY();
@@ -69,11 +68,12 @@ class SourceNode {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+
   }
 }
 
 SourceNode.ASSOC_COLOR = {
-  1: "#F5F5DC",
+  1: "#DCDCC6",
   2: "#FFFF00",
   3: "#0000FF",
   4: "#FFA500",

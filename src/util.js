@@ -6,5 +6,3 @@ class Util {
     return 400;
   }
 }
-
-module.exports = Util;

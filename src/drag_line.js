@@ -1,16 +1,15 @@
 class DragLine {
-  constructor(x, y, x2, y2) {
+  constructor(x, y, x2, y2, startNode) {
     this.x = x;
     this.y = y;
     this.x2 = x2;
     this.y2 = y2;
     this.pos = [];
     this.balls = [];
-    this.associatedNode = null;
+    this.startNode = startNode;
     this.destinationNode = null;
     this.defaultBall = null;
   }
-
   draw(ctx) {
     ctx.beginPath();
     ctx.lineWidth = 5;

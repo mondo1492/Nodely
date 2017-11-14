@@ -13,7 +13,7 @@ class GameView {
     this.interval = 0;
     this.interval2 = 0;
     this.newGame = true;
-    this.stored = [];
+    this.sourceNodes = [];
     this.subNodes = [];
     this.lines = [];
     this.lineQueue = [];
@@ -23,23 +23,25 @@ class GameView {
     this.paused = false;
     this.dragLine = null;
     this.count = 0;
+    this.score = 0;
     this.skipMouseMove = false;
     this.canvas = document.getElementById("canvas");
     this.registerEventListener = this.registerEventListener.bind(this);
     this.registerEventListener();
   }
 
+  start() {
+    this.lastTime = 0;
+    requestAnimationFrame(this.animate.bind(this));
+  }
+
   registerEventListener() {
     let self = this;
     this.canvas.addEventListener('mousedown', function() {
-        let xCord = event.offsetX;
-        let yCord = event.offsetY;
-        self.stored.forEach(function(sourcenode) {
-          self.userInput(xCord, yCord, sourcenode);
-        });
-        self.subNodes.forEach(function(subnode) {
-          self.userInput(xCord, yCord, subnode);
-        });
+        let allNodes = self.sourceNodes.concat(self.subNodes);
+        for (let i = 0; i < allNodes.length; i++) {
+          self.userInput(event.offsetX, event.offsetY, allNodes[i]);
+        }
     });
 
     document.addEventListener('keydown', function(e) {
@@ -52,48 +54,30 @@ class GameView {
     });
   }
 
-
   deleteNode(xCord, yCord) {
-    ///Still need to fix this method
-    let subNodeIdx = 0;
-    let sourceNodeIdx = 0;
-    let newNodes = [];
-    let self = this;
-    while (subNodeIdx < this.subNodes.length) {
-      if (!(xCord >= this.subNodes[subNodeIdx].xRange[0] &&
-          xCord <= this.subNodes[subNodeIdx].xRange[1] &&
-          yCord >= this.subNodes[subNodeIdx].yRange[0] &&
-          yCord <= this.subNodes[subNodeIdx].yRange[1])) {
-            newNodes.push(this.subNodes[subNodeIdx]);
-            for (let i = 0; i < this.subNodes[subNodeIdx].lines.length; i++) {
-              if (xCord >= this.subNodes[subNodeIdx].lines[i].destinationNode.xRange[0] &&
-                  xCord <= this.subNodes[subNodeIdx].lines[i].destinationNode.xRange[1] &&
-                  yCord >= this.subNodes[subNodeIdx].lines[i].destinationNode.yRange[0] &&
-                  yCord <= this.subNodes[subNodeIdx].lines[i].destinationNode.yRange[1]) {
-                this.subNodes[subNodeIdx].deleteLine(i);
-              }
-            }
+    let newSubs = [];
+    let newSources = [];
+    let mutableNodes = this.subNodes.concat(this.sourceNodes);
+    for (let i = 0; i < mutableNodes.length; i++) {
+      if (!(this.inRange(xCord, yCord, mutableNodes[i]))) {
+        for (let j = 0; j < mutableNodes[i].lines.length; j++) {
+          if (xCord >= mutableNodes[i].lines[j].destinationNode.xRange[0] &&
+              xCord <= mutableNodes[i].lines[j].destinationNode.xRange[1] &&
+              yCord >= mutableNodes[i].lines[j].destinationNode.yRange[0] &&
+              yCord <= mutableNodes[i].lines[j].destinationNode.yRange[1]) {
+            mutableNodes[i].deleteLine(j);
           }
-          subNodeIdx += 1;
         }
-      while (sourceNodeIdx < this.stored.length) {
-        if (!(xCord >= this.stored[sourceNodeIdx].xRange[0] &&
-            xCord <= this.stored[sourceNodeIdx].xRange[1] &&
-            yCord >= this.stored[sourceNodeIdx].yRange[0] &&
-            yCord <= this.stored[sourceNodeIdx].yRange[1])) {
-              for (let i = 0; i < this.stored[sourceNodeIdx].lines.length; i++) {
-                if (xCord >= this.stored[sourceNodeIdx].lines[i].destinationNode.xRange[0] &&
-                    xCord <= this.stored[sourceNodeIdx].lines[i].destinationNode.xRange[1] &&
-                    yCord >= this.stored[sourceNodeIdx].lines[i].destinationNode.yRange[0] &&
-                    yCord <= this.stored[sourceNodeIdx].lines[i].destinationNode.yRange[1]) {
-                  this.stored[sourceNodeIdx].deleteLine(i);
-                }
-              }
-            }
-            sourceNodeIdx += 1;
-          }
-      self.skipMouseMove = false;
-      this.subNodes = newNodes;
+        if (mutableNodes[i] instanceof SourceNode) {
+          newSources.push(mutableNodes[i]);
+        } else {
+          newSubs.push(mutableNodes[i]);
+        }
+      }
+    }
+    this.skipMouseMove = false;
+    this.sourceNodes = newSources;
+    this.subNodes = newSubs;
   }
 
   onSameChain(src, end) {
@@ -110,23 +94,46 @@ class GameView {
     return false;
   }
 
+  inRange(xCord, yCord, node) {
+    return (xCord >= node.xRange[0] && xCord <= node.xRange[1] &&
+      yCord >= node.yRange[0] && yCord <= node.yRange[1]);
+  }
+
+  getNodeFromCoords(x, y) {
+    let allNodes = this.sourceNodes.concat(this.subNodes).concat(this.sinkNodes);
+    for (let i = 0; i < allNodes.length; i++) {
+      if (this.inRange(x, y, allNodes[i])) {
+        return allNodes[i];
+      }
+    }
+    return null;
+  }
+
+  pointsToPreviousNode(node, destNode) {
+    for (let i = 0; i < node.associated.length; i++) {
+      if (node.associated[i] === destNode) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   userInput(xCord, yCord, node) {
     let self = this;
-    if (xCord >= node.xRange[0] && xCord <= node.xRange[1] &&
-      yCord >= node.yRange[0] && yCord <= node.yRange[1]) {
+    if (this.inRange(xCord, yCord, node)) {
         let addVal = node.val;
+
         self.canvas.addEventListener('mousemove', function handler(e) {
-          const xCordMove = event.offsetX;
-          const yCordMove = event.offsetY;
+          let xCordMove = event.offsetX;
+          let yCordMove = event.offsetY;
           if (self.skipMouseMove) {
             self.skipMouseMove = false;
             e.currentTarget.removeEventListener(e.type, handler);
           }
-          self.dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove);
+          self.dragLine = new DragLine(xCord, yCord, xCordMove, yCordMove, node);
           self.canvas.addEventListener('mouseup', function handler2(e2) {
             e2.currentTarget.removeEventListener(e2.type, handler2);
             e2.currentTarget.removeEventListener(e.type, handler);
-            // self.dragLine = null;
           });
         });
         self.canvas.addEventListener('mouseup', function handler(e) {
@@ -137,87 +144,78 @@ class GameView {
             self.deleteNode(xCord, yCord);
             self.skipMouseMove = true;
             e.currentTarget.removeEventListener(e.type, handler);
-            // self.dragLine = null;
+            self.dragLine = null;
             return;
           }
+          let destNode = self.getNodeFromCoords(xCordUp, yCordUp);
+
           let addUp = false;
           let sameChain = false;
-          let subNodeIdx = 0;
+          let pointsToPrevious = false;
           const powerBall = new PowerBall(self.dragLine, node);
           self.dragLine.balls.push(powerBall);
           self.dragLine.defaultBall = new PowerBall(self.dragLine, node);
-          self.dragLine.associatedNode = node;
-          while (subNodeIdx < self.subNodes.length) {
-            if (xCordUp >= self.subNodes[subNodeIdx].xRange[0] &&
-                xCordUp <= self.subNodes[subNodeIdx].xRange[1] &&
-                yCordUp >= self.subNodes[subNodeIdx].yRange[0] &&
-                yCordUp <= self.subNodes[subNodeIdx].yRange[1]) {
-                if (self.onSameChain(self.subNodes[subNodeIdx], node)) {
-                  sameChain = true;
-                  break;
-                }
-                self.subNodes[subNodeIdx].val += addVal;
-                self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
-                self.dragLine.defaultBall.destinationNode = self.subNodes[subNodeIdx];
-                self.dragLine.destinationNode = self.subNodes[subNodeIdx];
-                self.subNodes[subNodeIdx].updateAddedValues(node.uniqId);
-                node.associated.push(self.subNodes[subNodeIdx]);
-                node.addLines(self.dragLine);
-                let currentCheckNode = [self.subNodes[subNodeIdx]];
-                let currentSum = self.subNodes[subNodeIdx].val;
-                while (currentCheckNode.length > 0) {
-                  let currentNode = currentCheckNode.shift();
-                  currentNode.lines.forEach(function(line) {
-                      if (line.destinationNode instanceof SubNode) {
-                        line.destinationNode.val += addVal;
-                        currentCheckNode.push(line.destinationNode);
-                      }
-                  });
-                }
-                addUp = true;
-                break;
-              }
-              subNodeIdx += 1;
-          }
-          let sinkNodeIdx = 0;
-          let toSinkNode = false;
-          while (sinkNodeIdx < self.sinkNodes.length) {
-            if (xCordUp >= self.sinkNodes[sinkNodeIdx].xRange[0] &&
-                xCordUp <= self.sinkNodes[sinkNodeIdx].xRange[1] &&
-                yCordUp >= self.sinkNodes[sinkNodeIdx].yRange[0] &&
-                yCordUp <= self.sinkNodes[sinkNodeIdx].yRange[1]) {
+          self.dragLine.startNode = node;
 
-                if (self.sinkNodes[sinkNodeIdx].val === addVal) {
-                  self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.sinkNodes[sinkNodeIdx];
-                  self.dragLine.defaultBall.destinationNode = self.sinkNodes[sinkNodeIdx];
-                  self.dragLine.destinationNode = self.sinkNodes[sinkNodeIdx];
-                  node.associated.push(self.sinkNodes[sinkNodeIdx]);
-                  node.addLines(self.dragLine);
-                }
-                toSinkNode = true;
-                break;
+          let toSinkNode = false;
+          if (self.pointsToPreviousNode(node, destNode)) {
+            pointsToPrevious = true;
+            addUp = false;
+          } else if (destNode instanceof SubNode) {
+            if (self.onSameChain(destNode, node)) {
+              sameChain = true;
+              self.dragLine = null;
+            } else {
+              destNode.val += addVal;
+              self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = destNode;
+              self.dragLine.defaultBall.destinationNode = destNode;
+              self.dragLine.destinationNode = destNode;
+              destNode.updateAddedValues(node.uniqId);
+              node.associated.push(destNode);
+              node.addLines(self.dragLine);
+
+              let currentCheckNode = [destNode];
+              let currentSum = destNode.val;
+              while (currentCheckNode.length > 0) {
+                let currentNode = currentCheckNode.shift();
+                currentNode.lines.forEach(function(line) {
+                    if (line.destinationNode instanceof SubNode) {
+                      line.destinationNode.val += addVal;
+                      currentCheckNode.push(line.destinationNode);
+                    }
+                });
               }
-              sinkNodeIdx += 1;
-          }
-          if (!addUp && !toSinkNode && !sameChain) {
+              addUp = true;
+            }
+          } else if (destNode instanceof SinkNode) {
+            if (destNode.val === addVal) {
+              self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = destNode;
+              self.dragLine.defaultBall.destinationNode = destNode;
+              self.dragLine.destinationNode = destNode;
+              node.associated.push(destNode);
+              node.addLines(self.dragLine);
+              toSinkNode = true;
+            }
+          } else if (destNode instanceof SourceNode) {
+            addUp = false;
+          } else if (!addUp && !toSinkNode && !sameChain && !pointsToPrevious) {
             let newNode = new SubNode(xCordUp, yCordUp, self.ctx, addVal, node.uniqId);
             self.subNodes.push(newNode);
-            self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = self.subNodes[subNodeIdx];
-            self.dragLine.defaultBall.destinationNode = self.subNodes[subNodeIdx];
-            self.dragLine.destinationNode = self.subNodes[subNodeIdx];
-            node.associated.push(self.subNodes[subNodeIdx]);
-            // self.subNodes[subNodeIdx].updateAddedValues(node.id);
+            self.dragLine.balls[self.dragLine.balls.length - 1].destinationNode = newNode;
+            self.dragLine.defaultBall.destinationNode = newNode;
+            self.dragLine.destinationNode = newNode;
+            node.associated.push(newNode);
             node.addLines(self.dragLine);
           } else {
             addUp = false;
           }
+          self.dragLine = null;
         });
       }
   }
 
-  start() {
-    this.lastTime = 0;
-    requestAnimationFrame(this.animate.bind(this));
+  combineAllNodes() {
+    return this.sourceNodes.concat(this.subNodes).concat(this.sinkNodes);
   }
 
   drawBallsFromLine(line, node) {
@@ -246,6 +244,10 @@ class GameView {
   }
 
   animate(time) {
+    if (this.interval2 === 100) {
+      this.score += 1;
+      this.interval2 = 0;
+    }
     if (this.paused === false && this.gameOver === false) {
       let self = this;
       let newStore = [];
@@ -254,7 +256,7 @@ class GameView {
       if (this.dragLine !== null) {
         this.dragLine.draw(self.ctx);
       }
-      this.stored.forEach(function(sourcenode) {
+      this.sourceNodes.forEach(function(sourcenode) {
         sourcenode.updateTimeAlive();
         if (sourcenode.timeAlive > 0) {
           newStore.push(sourcenode);
@@ -273,39 +275,43 @@ class GameView {
             }
           });
         }
-        self.stored = newStore;
+        self.sourceNodes = newStore;
         sourcenode.lines.forEach(function(line) {
           line.draw(self.ctx);
         });
+
         if (sourcenode.countDown === 0) {
           sourcenode.countDown = 200;
           if (sourcenode.lines[sourcenode.lineIdx]) {
             let tester = new DragLine();
             tester.balls.push(new PowerBall(sourcenode.lines[sourcenode.lineIdx],
-              sourcenode.lines[sourcenode.lineIdx].associatedNode,
+              sourcenode.lines[sourcenode.lineIdx].startNode,
               sourcenode.lines[sourcenode.lineIdx].destinationNode));
             self.lineQueue.push(tester);
-            // sourcenode.lines[sourcenode.lineIdx].addBall(sourcenode.lines[sourcenode.lineIdx].defaultBall);
           }
           sourcenode.lineIdx += 1;
           if (sourcenode.lineIdx >= sourcenode.lines.length) {
             sourcenode.lineIdx = 0;
           }
-
         } else {
           sourcenode.countDown -= 1;
         }
         sourcenode.drawSourceNode(self.ctx);
       });
+
       if (this.newGame) {
-        this.stored.push(new SourceNode(this.stored));
-        this.stored.push(new SourceNode(this.stored));
-        this.sinkNodes.push(new SinkNode(this.sinkNodes, 5));
+        this.sourceNodes.push(new SourceNode(this.combineAllNodes(), 4));
+        this.sourceNodes.push(new SourceNode(this.combineAllNodes(), 3));
+        this.sourceNodes.push(new SourceNode(this.combineAllNodes(), 1));
+        this.sinkNodes.push(new SinkNode(this.combineAllNodes(), 4));
+        this.sinkNodes.push(new SinkNode(this.combineAllNodes(), 5));
+        this.sinkNodes.push(new SinkNode(this.combineAllNodes(), 2));
         this.newGame = false;
       }
+
       if (this.interval === 1000) {
-        this.stored.push(new SourceNode(this.stored));
-        this.sinkNodes.push(new SinkNode(this.sinkNodes));
+        this.sourceNodes.push(new SourceNode(this.combineAllNodes()));
+        this.sinkNodes.push(new SinkNode(this.combineAllNodes()));
         this.lastTime = time;
         this.interval = 0;
       } else {
@@ -315,13 +321,16 @@ class GameView {
       const subNodeStore = [];
       this.subNodes.forEach(function(subnode) {
         if (subnode.val > 0) {
+          if (subnode.associated.length === 0) {
+            subnode.resetCounts();
+          }
           subnode.lines.forEach(function(line) {
-            if (subnode.isFullyPowered()) {
+             if (subnode.isFullyPowered()) {
                 if (subnode.lines[subnode.lineIdx]) {
                   let tester2 = new DragLine();
                   tester2.balls.push(new PowerBall(
                     subnode.lines[subnode.lineIdx],
-                    subnode.lines[subnode.lineIdx].associatedNode,
+                    subnode.lines[subnode.lineIdx].startNode,
                     subnode.lines[subnode.lineIdx].destinationNode));
                   self.lineQueue.push(tester2);
                 }
@@ -337,6 +346,7 @@ class GameView {
           subNodeStore.push(subnode);
           subnode.drawSubNode(self.ctx);
         }
+
       });
       self.subNodes = subNodeStore;
       const sinkNodeStore = [];
@@ -348,11 +358,12 @@ class GameView {
         if (sinknode.currentTally < sinknode.finalTally) {
           sinknode.lines.forEach(function(line) {
             self.drawBallsFromLine(line);
-            line.draw(self.ctx);
+            // line.draw(self.ctx);
           });
           sinkNodeStore.push(sinknode);
           sinknode.drawSinkNode(self.ctx);
         } else {
+          self.score += 10;
           self.subNodes.forEach(function(subnode) {
             let newLines = [];
             subnode.lines.forEach(function(line) {
@@ -362,7 +373,8 @@ class GameView {
             });
             subnode.lines = newLines;
           });
-          self.stored.forEach(function(sourcenode) {
+
+          self.sourceNodes.forEach(function(sourcenode) {
             let newLines = [];
             sourcenode.lines.forEach(function(line) {
               if (line.destinationNode !== sinknode) {
@@ -378,6 +390,7 @@ class GameView {
         self.drawBallsFromLine(line);
       });
       this.lastTime = time;
+      this.game.drawScore(this.ctx, this.score);
       requestAnimationFrame(this.animate.bind(this));
     } else if (this.paused === true) {
       this.game.drawPausedScreen(this.ctx);

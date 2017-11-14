@@ -1,6 +1,5 @@
 const Game = require("./game");
 
-
 class SinkNode {
   constructor(stored, initialVal) {
     this.x = this.generateRandomX();
@@ -35,6 +34,7 @@ class SinkNode {
   addLines(line) {
     this.lines.push(line);
   }
+
 
   assureNonOverlapPosition(stored) {
     for (let i = 0; i < stored.length; i++) {

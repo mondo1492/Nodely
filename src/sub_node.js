@@ -16,6 +16,13 @@ class SubNode {
     this.lines = [];
     this.count = 0;
     this.lineIdx = 0;
+
+  }
+
+  resetCounts() {
+    Object.keys(this.addedValues).forEach((key) => {
+      this.addedValues[key] = 0;
+    });
   }
 
   addLines(line) {
@@ -39,6 +46,18 @@ class SubNode {
     return fullyPowered;
   }
 
+  checkStatus() {
+    let allGreaterThanOne = true;
+    Object.keys(this.addedValues).forEach((key) => {
+      if (this.addedValues[key] < 1) {
+        allGreaterThanOne = false;
+      }
+    });
+    if (allGreaterThanOne) {
+      this.decreaseValuesByOne();
+    }
+  }
+
   decreaseValuesByOne() {
     Object.keys(this.addedValues).forEach((key) => {
       this.addedValues[key] -= 1;
@@ -49,6 +68,7 @@ class SubNode {
     if (!(String(id) in this.addedValues)) {
       this.addedValues[String(id)] = 0;
     }
+
   }
 
   updateAddedValues(id) {
@@ -69,6 +89,7 @@ class SubNode {
     this.ctx.fill();
     this.ctx.lineWidth = 5;
     this.ctx.strokeStyle = '#003300';
+
     this.ctx.font = "20px Georgia";
     this.ctx.fillStyle = "#000000";
     this.ctx.fillText(this.val, this.x - 5, this.y + 30);
