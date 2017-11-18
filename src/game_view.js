@@ -6,6 +6,7 @@ const DragLine = require("./drag_line");
 const PowerBall = require("./power_ball");
 const SinkNode = require("./sink_node");
 
+
 class GameView {
   constructor(game, ctx) {
     this.ctx = ctx;
