@@ -3,6 +3,7 @@ html {
 }
 
 #game {
+  background-image: url('./resources/backgroundimage.png');
   margin-top: 40px;
   display: flex;
   justify-content: center;
@@ -46,7 +47,7 @@ html {
 }
 #canvas {
   border: #666 1px solid;
-  background-image: radial-gradient(circle, white, #49D649);
+  background-image: url('../resources/backgroundimage.png');
 }
 #text-container {
   margin-top: 250px;
